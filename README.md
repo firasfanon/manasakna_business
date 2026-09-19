@@ -45,3 +45,13 @@ flutter run -d chrome
 ```
 
 Remote database provisioning remains a separate controlled step within Phase 6.
+
+## Phase 7 — Umrah Commercial MVP
+
+The Phase 7 candidate adds the synthetic end-to-end commercial Umrah chain:
+Lead → Quote → Booking → Traveler → Documents/Visa → Payment → Package/Departure
+→ Hotel/Room → Flight → Transport → Group/Supervisor → Support → Commercial
+Journey Context.
+
+Phase 7 remains synthetic-only and does not grant production, real-data, real
+payment, real Nusuk, or sovereign Hajj authority.
