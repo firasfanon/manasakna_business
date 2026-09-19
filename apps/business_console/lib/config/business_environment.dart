@@ -14,8 +14,13 @@ class BusinessEnvironment {
     defaultValue: '',
   );
 
+  static const syntheticPreview = bool.fromEnvironment(
+    'BUSINESS_SYNTHETIC_PREVIEW',
+    defaultValue: false,
+  );
+
   static bool get isConfigured =>
       supabaseUrl.trim().isNotEmpty && publishableKey.trim().isNotEmpty;
 
-  static const phaseLabel = 'Phase 6 — Commercial Umrah SaaS Foundation';
+  static const phaseLabel = 'Phase 7 — Umrah Commercial MVP';
 }

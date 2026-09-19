@@ -333,3 +333,18 @@ class CommercialMvpOverviewPreview extends StatelessWidget {
     );
   }
 }
+
+class CommercialMvpBrowserPreviewPage extends StatelessWidget {
+  const CommercialMvpBrowserPreviewPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('مناسكنا للأعمال — Phase 7 Preview')),
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(24),
+        child: CommercialMvpOverviewPreview(),
+      ),
+    );
+  }
+}
