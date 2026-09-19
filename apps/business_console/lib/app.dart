@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/business_environment.dart';
 import 'core/auth/login_page.dart';
+import 'features/commercial_mvp/presentation/commercial_mvp_page.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/tenancy/presentation/tenant_session.dart';
 
@@ -23,7 +24,9 @@ class ManasaknaBusinessApp extends ConsumerWidget {
         textDirection: TextDirection.rtl,
         child: child ?? const SizedBox.shrink(),
       ),
-      home: BusinessEnvironment.isConfigured
+      home: BusinessEnvironment.syntheticPreview
+          ? const CommercialMvpBrowserPreviewPage()
+          : BusinessEnvironment.isConfigured
           ? const _AuthGate()
           : const _ConfigurationRequiredPage(),
     );
