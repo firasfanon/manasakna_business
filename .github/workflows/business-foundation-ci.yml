@@ -1,0 +1,38 @@
+name: Manasakna Business Foundation CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'task/**'
+  pull_request:
+
+jobs:
+  flutter-foundation:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/business_console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: flutter pub get
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Web release build
+        run: flutter build web --release
+      - name: Client secret boundary
+        run: |
+          if grep -R -n -E 'service[_-]?role|SUPABASE_SERVICE' lib; then
+            echo "Service-role material is prohibited in the client."
+            exit 1
+          fi
