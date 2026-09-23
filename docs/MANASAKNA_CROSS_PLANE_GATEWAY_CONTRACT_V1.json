@@ -1,0 +1,33 @@
+{
+  "contract_version": "manasakna-cross-plane-gateway-v1",
+  "source_project": "MANASAKNA_BUSINESS",
+  "consumer_project": "MANASAKNA_APP",
+  "journey_type": "umrah",
+  "source_authority": "commercialCompany",
+  "required_scope": "journey.read.traveler_projection",
+  "allowed_projection_fields": [
+    "organization",
+    "booking",
+    "package",
+    "traveler_summary",
+    "accommodation",
+    "flight_summary",
+    "freshness"
+  ],
+  "forbidden_projection_fields": [
+    "customer_name",
+    "full_name",
+    "passport_reference",
+    "document_reference",
+    "finance",
+    "payment",
+    "payments",
+    "margin",
+    "commission",
+    "supplier_payables",
+    "lead",
+    "quote"
+  ],
+  "direct_cross_plane_db_access": false,
+  "synthetic_non_production_default": true
+}
