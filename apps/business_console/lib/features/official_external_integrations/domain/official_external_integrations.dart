@@ -28,47 +28,29 @@ const phase10AllowedResponseKeys = <String>{
   'status',
 };
 
-enum ExternalProviderClass {
-  officialRegulatory,
-  messaging,
-  payment,
-  travel,
-}
+enum ExternalProviderClass { officialRegulatory, messaging, payment, travel }
 
-enum ProviderAuthority {
-  government,
-  platformOperational,
-  commercialProvider,
-}
+enum ProviderAuthority { government, platformOperational, commercialProvider }
 
-enum ProviderAvailability {
-  available,
-  degraded,
-  unavailable,
-}
+enum ProviderAvailability { available, degraded, unavailable }
 
-enum ProviderAuditOutcome {
-  allowed,
-  replayed,
-  denied,
-  failed,
-}
+enum ProviderAuditOutcome { allowed, replayed, denied, failed }
 
 extension ExternalProviderClassCode on ExternalProviderClass {
   String get code => switch (this) {
-        ExternalProviderClass.officialRegulatory => 'official_regulatory',
-        ExternalProviderClass.messaging => 'messaging',
-        ExternalProviderClass.payment => 'payment',
-        ExternalProviderClass.travel => 'travel',
-      };
+    ExternalProviderClass.officialRegulatory => 'official_regulatory',
+    ExternalProviderClass.messaging => 'messaging',
+    ExternalProviderClass.payment => 'payment',
+    ExternalProviderClass.travel => 'travel',
+  };
 }
 
 extension ProviderAuthorityCode on ProviderAuthority {
   String get code => switch (this) {
-        ProviderAuthority.government => 'government',
-        ProviderAuthority.platformOperational => 'platform_operational',
-        ProviderAuthority.commercialProvider => 'commercial_provider',
-      };
+    ProviderAuthority.government => 'government',
+    ProviderAuthority.platformOperational => 'platform_operational',
+    ProviderAuthority.commercialProvider => 'commercial_provider',
+  };
 }
 
 class ProviderDescriptor {
@@ -228,10 +210,7 @@ class ProviderResponse {
   final Map<String, Object?> payload;
   final ProviderProvenance provenance;
 
-  void validateAgainst(
-    ProviderRequest request,
-    ProviderDescriptor descriptor,
-  ) {
+  void validateAgainst(ProviderRequest request, ProviderDescriptor descriptor) {
     if (contractVersion != phase10IntegrationContractVersion ||
         requestId != request.requestId ||
         providerId != request.providerId ||
@@ -246,8 +225,9 @@ class ProviderResponse {
         provenance.observedAt != observedAt) {
       throw const FormatException('PROVIDER_PROVENANCE_MISMATCH');
     }
-    final unapproved =
-        payload.keys.toSet().difference(phase10AllowedResponseKeys);
+    final unapproved = payload.keys.toSet().difference(
+      phase10AllowedResponseKeys,
+    );
     if (unapproved.isNotEmpty) {
       throw FormatException(
         'UNAPPROVED_PROVIDER_RESPONSE_FIELD:' + unapproved.first,
@@ -291,7 +271,7 @@ abstract interface class ProviderAdapter {
 
 abstract base class SyntheticProviderAdapter implements ProviderAdapter {
   SyntheticProviderAdapter({DateTime Function()? clock})
-      : clock = clock ?? DateTime.now;
+    : clock = clock ?? DateTime.now;
 
   final DateTime Function() clock;
   int callCount = 0;
@@ -327,21 +307,18 @@ final class SyntheticOfficialRegulatoryAdapter
 
   @override
   ProviderDescriptor get descriptor => const ProviderDescriptor(
-        providerId: 'official-regulatory-synthetic-v1',
-        providerClass: ExternalProviderClass.officialRegulatory,
-        authority: ProviderAuthority.government,
-        sourceOfTruthDomain: 'official_regulatory_external',
-        allowedOperations: {
-          'official.status.read',
-          'hajj.status.read',
-        },
-      );
+    providerId: 'official-regulatory-synthetic-v1',
+    providerClass: ExternalProviderClass.officialRegulatory,
+    authority: ProviderAuthority.government,
+    sourceOfTruthDomain: 'official_regulatory_external',
+    allowedOperations: {'official.status.read', 'hajj.status.read'},
+  );
 
   @override
   Map<String, Object?> buildPayload(ProviderRequest request) => const {
-        'status': 'synthetic_only',
-        'source_note': 'not_an_official_record',
-      };
+    'status': 'synthetic_only',
+    'source_note': 'not_an_official_record',
+  };
 }
 
 final class SyntheticMessagingAdapter extends SyntheticProviderAdapter {
@@ -349,21 +326,18 @@ final class SyntheticMessagingAdapter extends SyntheticProviderAdapter {
 
   @override
   ProviderDescriptor get descriptor => const ProviderDescriptor(
-        providerId: 'messaging-synthetic-v1',
-        providerClass: ExternalProviderClass.messaging,
-        authority: ProviderAuthority.platformOperational,
-        sourceOfTruthDomain: 'messaging_external',
-        allowedOperations: {
-          'message.preview',
-          'message.status.synthetic',
-        },
-      );
+    providerId: 'messaging-synthetic-v1',
+    providerClass: ExternalProviderClass.messaging,
+    authority: ProviderAuthority.platformOperational,
+    sourceOfTruthDomain: 'messaging_external',
+    allowedOperations: {'message.preview', 'message.status.synthetic'},
+  );
 
   @override
   Map<String, Object?> buildPayload(ProviderRequest request) => const {
-        'status': 'synthetic_only',
-        'delivery_state': 'preview_not_delivered',
-      };
+    'status': 'synthetic_only',
+    'delivery_state': 'preview_not_delivered',
+  };
 }
 
 final class SyntheticPaymentAdapter extends SyntheticProviderAdapter {
@@ -371,23 +345,20 @@ final class SyntheticPaymentAdapter extends SyntheticProviderAdapter {
 
   @override
   ProviderDescriptor get descriptor => const ProviderDescriptor(
-        providerId: 'payment-synthetic-v1',
-        providerClass: ExternalProviderClass.payment,
-        authority: ProviderAuthority.commercialProvider,
-        sourceOfTruthDomain: 'payment_external',
-        allowedOperations: {
-          'payment.intent.preview',
-          'payment.status.synthetic',
-        },
-      );
+    providerId: 'payment-synthetic-v1',
+    providerClass: ExternalProviderClass.payment,
+    authority: ProviderAuthority.commercialProvider,
+    sourceOfTruthDomain: 'payment_external',
+    allowedOperations: {'payment.intent.preview', 'payment.status.synthetic'},
+  );
 
   @override
   Map<String, Object?> buildPayload(ProviderRequest request) => {
-        'status': 'synthetic_no_charge',
-        'amount_minor': request.payload['amount_minor'] ?? 0,
-        'currency': request.payload['currency'] ?? 'USD',
-        'reference': 'PAY-SYN-' + request.requestId,
-      };
+    'status': 'synthetic_no_charge',
+    'amount_minor': request.payload['amount_minor'] ?? 0,
+    'currency': request.payload['currency'] ?? 'USD',
+    'reference': 'PAY-SYN-' + request.requestId,
+  };
 }
 
 final class SyntheticTravelProviderAdapter extends SyntheticProviderAdapter {
@@ -395,33 +366,31 @@ final class SyntheticTravelProviderAdapter extends SyntheticProviderAdapter {
 
   @override
   ProviderDescriptor get descriptor => const ProviderDescriptor(
-        providerId: 'travel-synthetic-v1',
-        providerClass: ExternalProviderClass.travel,
-        authority: ProviderAuthority.commercialProvider,
-        sourceOfTruthDomain: 'travel_provider_external',
-        allowedOperations: {
-          'travel.availability.preview',
-          'travel.booking_status.synthetic',
-        },
-      );
+    providerId: 'travel-synthetic-v1',
+    providerClass: ExternalProviderClass.travel,
+    authority: ProviderAuthority.commercialProvider,
+    sourceOfTruthDomain: 'travel_provider_external',
+    allowedOperations: {
+      'travel.availability.preview',
+      'travel.booking_status.synthetic',
+    },
+  );
 
   @override
   Map<String, Object?> buildPayload(ProviderRequest request) => const {
-        'status': 'synthetic_availability',
-        'availability_count': 2,
-        'source_note': 'no_live_inventory_call',
-      };
+    'status': 'synthetic_availability',
+    'availability_count': 2,
+    'source_note': 'no_live_inventory_call',
+  };
 }
 
 class ProviderAdapterRegistry {
   ProviderAdapterRegistry(Iterable<ProviderAdapter> adapters)
-      : _adapters = {
-          for (final adapter in adapters) adapter.descriptor.providerId: adapter,
-        };
+    : _adapters = {
+        for (final adapter in adapters) adapter.descriptor.providerId: adapter,
+      };
 
-  factory ProviderAdapterRegistry.synthetic({
-    DateTime Function()? clock,
-  }) =>
+  factory ProviderAdapterRegistry.synthetic({DateTime Function()? clock}) =>
       ProviderAdapterRegistry([
         SyntheticOfficialRegulatoryAdapter(clock: clock),
         SyntheticMessagingAdapter(clock: clock),
@@ -439,8 +408,9 @@ class ProviderAdapterRegistry {
     return adapter;
   }
 
-  List<ProviderDescriptor> get descriptors =>
-      _adapters.values.map((adapter) => adapter.descriptor).toList(growable: false);
+  List<ProviderDescriptor> get descriptors => _adapters.values
+      .map((adapter) => adapter.descriptor)
+      .toList(growable: false);
 }
 
 class ProviderAdmissionGate {
@@ -621,7 +591,8 @@ class ProviderIntegrationClient {
           providerId: request.providerId,
           operation: request.operation,
           outcome: ProviderAuditOutcome.failed,
-          reason: 'EXPLICIT_UNAVAILABLE_AFTER_' +
+          reason:
+              'EXPLICIT_UNAVAILABLE_AFTER_' +
               policy.maxAttempts.toString() +
               '_ATTEMPTS',
         ),
