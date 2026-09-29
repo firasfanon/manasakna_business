@@ -22,6 +22,14 @@ jobs:
           cache: true
       - name: Dependencies
         run: flutter pub get
+      - name: Phase 10 format diagnostic
+        run: |
+          echo '===DOMAIN_FORMAT_START==='
+          dart format --output=show lib/features/official_external_integrations/domain/official_external_integrations.dart
+          echo '===DOMAIN_FORMAT_END==='
+          echo '===TEST_FORMAT_START==='
+          dart format --output=show test/phase10/official_external_integrations_test.dart
+          echo '===TEST_FORMAT_END==='
       - name: Format
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze
