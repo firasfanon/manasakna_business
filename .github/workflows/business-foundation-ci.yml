@@ -26,13 +26,26 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze
         run: flutter analyze
+      - name: Phase 10 provider admission gates
+        run: flutter test test/phase10
+      - name: Phase 10 provider isolation
+        run: |
+          if grep -R -n -E 'package:http|dart:io|SupabaseClient|supabase_flutter|HttpClient|Uri\.parse|WebSocket' lib/features/official_external_integrations; then
+            echo "Phase 10 synthetic provider control plane must not contain a live network or database client."
+            exit 1
+          fi
       - name: Test
         run: flutter test
       - name: Web release build
         run: flutter build web --release
       - name: Client secret boundary
+        shell: bash
         run: |
-          if grep -R -n -E 'service[_-]?role|SUPABASE_SERVICE' lib; then
+          set -euo pipefail
+          matches="$(grep -R -n -E 'service[_-]?role|SUPABASE_SERVICE' lib || true)"
+          unsafe="$(printf '%s\n' "$matches" | grep -v -E "official_external_integrations/domain/official_external_integrations\\.dart:[0-9]+:[[:space:]]*'service_role',[[:space:]]*$" || true)"
+          if [ -n "$unsafe" ]; then
+            echo "$unsafe"
             echo "Service-role material is prohibited in the client."
             exit 1
           fi

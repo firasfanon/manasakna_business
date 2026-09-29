@@ -1,0 +1,89 @@
+{
+  "contract_version": "manasakna-provider-integration-v1",
+  "execution_mode": "synthetic_non_production_only",
+  "real_provider_activation_authorized": false,
+  "direct_cross_plane_db_access": false,
+  "shared_database_mutation": false,
+  "production": false,
+  "real_data": false,
+  "provider_classes": [
+    {
+      "provider_id": "official-regulatory-synthetic-v1",
+      "provider_class": "official_regulatory",
+      "authority": "government",
+      "source_of_truth_domain": "official_regulatory_external",
+      "allowed_operations": [
+        "official.status.read",
+        "hajj.status.read"
+      ]
+    },
+    {
+      "provider_id": "messaging-synthetic-v1",
+      "provider_class": "messaging",
+      "authority": "platform_operational",
+      "source_of_truth_domain": "messaging_external",
+      "allowed_operations": [
+        "message.preview",
+        "message.status.synthetic"
+      ]
+    },
+    {
+      "provider_id": "payment-synthetic-v1",
+      "provider_class": "payment",
+      "authority": "commercial_provider",
+      "source_of_truth_domain": "payment_external",
+      "allowed_operations": [
+        "payment.intent.preview",
+        "payment.status.synthetic"
+      ]
+    },
+    {
+      "provider_id": "travel-synthetic-v1",
+      "provider_class": "travel",
+      "authority": "commercial_provider",
+      "source_of_truth_domain": "travel_provider_external",
+      "allowed_operations": [
+        "travel.availability.preview",
+        "travel.booking_status.synthetic"
+      ]
+    }
+  ],
+  "mandatory_gates": {
+    "explicit_provider_identity": true,
+    "authority_domain": true,
+    "source_of_truth_declaration": true,
+    "data_minimization": true,
+    "provenance_and_freshness": true,
+    "timeout": true,
+    "retry_backoff_contract": true,
+    "explicit_unavailable_fallback": true,
+    "idempotency_and_replay": true,
+    "audit": true,
+    "secret_boundary": true,
+    "synthetic_webhook_authenticity_and_replay": true
+  },
+  "forbidden_real_capabilities": [
+    "real_nusuk",
+    "real_payment",
+    "real_external_provider",
+    "real_messaging",
+    "live_webhook",
+    "production_deployment",
+    "real_user_data",
+    "provider_credentials",
+    "business_hajj_sovereign_authority"
+  ],
+  "forbidden_payload_keys": [
+    "api_key",
+    "authorization",
+    "card_number",
+    "client_secret",
+    "cvv",
+    "full_name",
+    "passport_reference",
+    "password",
+    "service_role",
+    "secret",
+    "token"
+  ]
+}
