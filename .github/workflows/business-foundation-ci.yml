@@ -22,18 +22,6 @@ jobs:
           cache: true
       - name: Dependencies
         run: flutter pub get
-      - name: Phase 10 canonical formatter diagnostic
-        run: |
-          set -euo pipefail
-          dart format lib/features/official_external_integrations/domain/official_external_integrations.dart test/phase10/official_external_integrations_test.dart
-          echo '===DOMAIN_B64_START==='
-          base64 -w0 lib/features/official_external_integrations/domain/official_external_integrations.dart
-          echo
-          echo '===DOMAIN_B64_END==='
-          echo '===TEST_B64_START==='
-          base64 -w0 test/phase10/official_external_integrations_test.dart
-          echo
-          echo '===TEST_B64_END==='
       - name: Format
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze

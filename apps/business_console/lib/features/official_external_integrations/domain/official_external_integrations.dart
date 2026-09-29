@@ -230,7 +230,7 @@ class ProviderResponse {
     );
     if (unapproved.isNotEmpty) {
       throw FormatException(
-        'UNAPPROVED_PROVIDER_RESPONSE_FIELD:' + unapproved.first,
+        'UNAPPROVED_PROVIDER_RESPONSE_FIELD:${unapproved.first}',
       );
     }
     _assertNoForbiddenKeys(payload);
@@ -245,7 +245,7 @@ class ProviderResponse {
     return ProviderResponse(
       contractVersion: phase10IntegrationContractVersion,
       requestId: request.requestId,
-      eventId: 'synthetic-unavailable:' + request.requestId,
+      eventId: 'synthetic-unavailable:${request.requestId}',
       providerId: descriptor.providerId,
       observedAt: at,
       availability: ProviderAvailability.unavailable,
@@ -285,7 +285,7 @@ abstract base class SyntheticProviderAdapter implements ProviderAdapter {
     return ProviderResponse(
       contractVersion: phase10IntegrationContractVersion,
       requestId: request.requestId,
-      eventId: descriptor.providerId + ':' + request.requestId,
+      eventId: '${descriptor.providerId}:${request.requestId}',
       providerId: descriptor.providerId,
       observedAt: at,
       availability: ProviderAvailability.available,
@@ -357,7 +357,7 @@ final class SyntheticPaymentAdapter extends SyntheticProviderAdapter {
     'status': 'synthetic_no_charge',
     'amount_minor': request.payload['amount_minor'] ?? 0,
     'currency': request.payload['currency'] ?? 'USD',
-    'reference': 'PAY-SYN-' + request.requestId,
+    'reference': 'PAY-SYN-${request.requestId}',
   };
 }
 
@@ -592,9 +592,7 @@ class ProviderIntegrationClient {
           operation: request.operation,
           outcome: ProviderAuditOutcome.failed,
           reason:
-              'EXPLICIT_UNAVAILABLE_AFTER_' +
-              policy.maxAttempts.toString() +
-              '_ATTEMPTS',
+              'EXPLICIT_UNAVAILABLE_AFTER_${policy.maxAttempts}_ATTEMPTS',
         ),
       );
       return response;
