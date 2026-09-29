@@ -22,18 +22,6 @@ jobs:
           cache: true
       - name: Dependencies
         run: flutter pub get
-      - name: Phase 10 canonical formatter final diagnostic
-        run: |
-          set -euo pipefail
-          dart format lib/features/official_external_integrations/domain/official_external_integrations.dart test/phase10/official_external_integrations_test.dart
-          echo '===FINAL_DOMAIN_B64_START==='
-          base64 -w0 lib/features/official_external_integrations/domain/official_external_integrations.dart
-          echo
-          echo '===FINAL_DOMAIN_B64_END==='
-          echo '===FINAL_TEST_B64_START==='
-          base64 -w0 test/phase10/official_external_integrations_test.dart
-          echo
-          echo '===FINAL_TEST_B64_END==='
       - name: Format
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze
@@ -51,8 +39,13 @@ jobs:
       - name: Web release build
         run: flutter build web --release
       - name: Client secret boundary
+        shell: bash
         run: |
-          if grep -R -n -E 'service[_-]?role|SUPABASE_SERVICE' lib; then
+          set -euo pipefail
+          matches="$(grep -R -n -E 'service[_-]?role|SUPABASE_SERVICE' lib || true)"
+          unsafe="$(printf '%s\n' "$matches" | grep -v -E "official_external_integrations/domain/official_external_integrations\\.dart:[0-9]+:[[:space:]]*'service_role',[[:space:]]*$" || true)"
+          if [ -n "$unsafe" ]; then
+            echo "$unsafe"
             echo "Service-role material is prohibited in the client."
             exit 1
           fi

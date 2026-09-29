@@ -591,8 +591,7 @@ class ProviderIntegrationClient {
           providerId: request.providerId,
           operation: request.operation,
           outcome: ProviderAuditOutcome.failed,
-          reason:
-              'EXPLICIT_UNAVAILABLE_AFTER_${policy.maxAttempts}_ATTEMPTS',
+          reason: 'EXPLICIT_UNAVAILABLE_AFTER_${policy.maxAttempts}_ATTEMPTS',
         ),
       );
       return response;
