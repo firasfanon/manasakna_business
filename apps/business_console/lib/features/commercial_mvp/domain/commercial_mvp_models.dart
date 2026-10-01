@@ -138,27 +138,75 @@ class CommercialJourneyContext {
   }
 }
 
+enum CommercialModuleState { preproductionReady, syntheticOnly, deferred }
+
 class CommercialModule {
-  const CommercialModule(this.label, this.description);
+  const CommercialModule(this.label, this.description, {required this.state});
 
   final String label;
   final String description;
+  final CommercialModuleState state;
 }
 
 const commercialMvpModules = <CommercialModule>[
-  CommercialModule('CRM', 'العملاء المحتملون وسجل العميل'),
-  CommercialModule('العروض', 'عرض سعر مع لقطة سعر غير قابلة للتغيير'),
-  CommercialModule('الحجوزات', 'الحجز وربط المسافرين'),
-  CommercialModule('الوثائق والتأشيرة', 'حالة الوثائق ومسار التأشيرة'),
-  CommercialModule('المالية التشغيلية', 'ذمم وقبض واسترداد دون محاسبة عامة'),
+  CommercialModule(
+    'CRM',
+    'العملاء المحتملون وسجل العميل',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'العروض',
+    'عرض سعر مع لقطة سعر غير قابلة للتغيير',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'الحجوزات',
+    'الحجز وربط المسافرين',
+    state: CommercialModuleState.preproductionReady,
+  ),
+  CommercialModule(
+    'الوثائق والتأشيرة',
+    'حالة الوثائق ومسار التأشيرة',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'المالية التشغيلية',
+    'ذمم وقبض واسترداد دون محاسبة عامة',
+    state: CommercialModuleState.syntheticOnly,
+  ),
   CommercialModule(
     'البرامج والمغادرات',
     'الباقة والمغادرة والطاقة الاستيعابية',
+    state: CommercialModuleState.syntheticOnly,
   ),
-  CommercialModule('الإقامة والغرف', 'الفندق والغرفة والتسكين'),
-  CommercialModule('الطيران والنقل', 'مقاطع الرحلة والنقل الأرضي'),
-  CommercialModule('الموردون', 'عقود ومصاريف تشغيلية'),
-  CommercialModule('المجموعات والمشرفون', 'تجميع الحجز والإشراف'),
-  CommercialModule('الدعم', 'حالات الدعم التشغيلي'),
-  CommercialModule('Journey Context', 'سياق عمرة تجاري موثق المصدر'),
+  CommercialModule(
+    'الإقامة والغرف',
+    'الفندق والغرفة والتسكين',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'الطيران والنقل',
+    'مقاطع الرحلة والنقل الأرضي',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'الموردون',
+    'عقود ومصاريف تشغيلية',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'المجموعات والمشرفون',
+    'تجميع الحجز والإشراف',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'الدعم',
+    'حالات الدعم التشغيلي',
+    state: CommercialModuleState.syntheticOnly,
+  ),
+  CommercialModule(
+    'Journey Context',
+    'سياق عمرة تجاري موثق المصدر',
+    state: CommercialModuleState.preproductionReady,
+  ),
 ];

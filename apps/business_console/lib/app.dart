@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/business_environment.dart';
 import 'core/auth/login_page.dart';
-import 'features/commercial_mvp/presentation/commercial_mvp_page.dart';
+import 'features/commercial_mvp/presentation/commercial_operations_center.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/tenancy/presentation/tenant_session.dart';
 
@@ -26,7 +26,7 @@ class ManasaknaBusinessApp extends ConsumerWidget {
         child: child ?? const SizedBox.shrink(),
       ),
       home: BusinessEnvironment.syntheticPreview
-          ? const CommercialMvpBrowserPreviewPage()
+          ? const CommercialOperationsSyntheticPage()
           : BusinessEnvironment.isConfigured
           ? const _AuthGate()
           : const _ConfigurationRequiredPage(),
@@ -82,7 +82,7 @@ class _ConfigurationRequiredPage extends StatelessWidget {
           child: Text(
             'مناسكنا للأعمال يعمل Fail-Closed.\n'
             'لم يتم ربط مشروع Supabase تجاري بعد.\n'
-            'Phase 6 لا يستخدم بيانات حقيقية أو صلاحيات حج سيادية.',
+            'البيئة غير مربوطة بمصدر بيانات تجاري. لا توجد بيانات حقيقية أو صلاحيات حج سيادية.',
             textAlign: TextAlign.center,
           ),
         ),
