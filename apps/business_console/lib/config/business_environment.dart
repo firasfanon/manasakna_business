@@ -22,5 +22,5 @@ class BusinessEnvironment {
   static bool get isConfigured =>
       supabaseUrl.trim().isNotEmpty && publishableKey.trim().isNotEmpty;
 
-  static const phaseLabel = 'Phase 7 — Umrah Commercial MVP';
+  static const phaseLabel = 'Phase 11 — Preproduction Readiness';
 }

@@ -340,7 +340,9 @@ class CommercialMvpBrowserPreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('مناسكنا للأعمال — Phase 7 Preview')),
+      appBar: AppBar(
+        title: const Text('مناسكنا للأعمال — معاينة ما قبل الإنتاج'),
+      ),
       body: const SingleChildScrollView(
         padding: EdgeInsets.all(24),
         child: CommercialMvpOverviewPreview(),
