@@ -19,6 +19,7 @@ class ManasaknaBusinessApp extends ConsumerWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B6B56)),
         useMaterial3: true,
+        fontFamily: 'NotoSansArabic',
       ),
       builder: (context, child) => Directionality(
         textDirection: TextDirection.rtl,
