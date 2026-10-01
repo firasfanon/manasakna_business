@@ -23,4 +23,5 @@ class BusinessEnvironment {
       supabaseUrl.trim().isNotEmpty && publishableKey.trim().isNotEmpty;
 
   static const phaseLabel = 'Phase 11 — Preproduction Readiness';
+  static const currentProgramLabel = 'Phase 12 — Productization & Admission';
 }

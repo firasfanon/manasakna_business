@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../commercial_mvp/presentation/commercial_mvp_page.dart';
+import '../../commercial_mvp/presentation/commercial_operations_center.dart';
 import '../../tenancy/domain/tenant_context.dart';
 import '../../tenancy/presentation/tenant_session.dart';
 
@@ -74,7 +74,7 @@ class BusinessDashboardPage extends ConsumerWidget {
           const SizedBox(height: 16),
           _BranchCard(branches: branches),
           const SizedBox(height: 24),
-          CommercialMvpPage(tenantId: selected.tenantId),
+          CommercialOperationsCenter(tenantId: selected.tenantId),
         ],
       ),
     );
