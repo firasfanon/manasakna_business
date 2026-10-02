@@ -351,8 +351,16 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       'العملاء المحتملون',
       createKind: 'lead',
     ),
-    BusinessWorkspace.quotes => liveResource('quotes', 'العروض'),
-    BusinessWorkspace.bookings => liveResource('bookings', 'الحجوزات'),
+    BusinessWorkspace.quotes => liveResource(
+      'quotes',
+      'العروض',
+      createKind: 'quote',
+    ),
+    BusinessWorkspace.bookings => liveResource(
+      'bookings',
+      'الحجوزات',
+      createKind: 'booking',
+    ),
     BusinessWorkspace.travelers => liveResource(
       'travelers',
       'المسافرون',
@@ -640,6 +648,8 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
   String _createLabel(String kind) => switch (kind) {
     'customer' => 'عميل جديد',
     'lead' => 'فرصة جديدة',
+    'quote' => 'عرض جديد',
+    'booking' => 'حجز جديد',
     'traveler' => 'مسافر جديد',
     'task' => 'مهمة جديدة',
     'support' => 'حالة دعم',
@@ -672,6 +682,28 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ('budget_max', 'الميزانية العليا', false),
       ('budget_currency', 'عملة الميزانية', false),
       ('next_follow_up_at', 'المتابعة القادمة ISO-8601', false),
+    ],
+    'quote' => const [
+      ('lead_id', 'معرّف الفرصة', true),
+      ('quote_code', 'رقم العرض', false),
+      ('currency', 'العملة', true),
+      ('subtotal_amount', 'المجموع قبل الخصم والضريبة', true),
+      ('discount_amount', 'الخصم', false),
+      ('tax_amount', 'الضريبة', false),
+      ('fee_amount', 'الرسوم', false),
+      ('valid_until', 'صالح حتى YYYY-MM-DD', false),
+      ('payment_terms', 'شروط الدفع', false),
+      ('cancellation_terms', 'شروط الإلغاء', false),
+      ('departure_id', 'معرّف المغادرة', false),
+    ],
+    'booking' => const [
+      ('quote_id', 'معرّف العرض المقبول', true),
+      ('booking_code', 'رقم الحجز', false),
+      ('departure_id', 'معرّف المغادرة', false),
+      ('total_amount', 'إجمالي الحجز', false),
+      ('currency', 'العملة', false),
+      ('payment_condition', 'شرط الدفع', false),
+      ('external_reference', 'مرجع خارجي', false),
     ],
     'traveler' => const [
       ('booking_id', 'معرّف الحجز', true),
@@ -720,6 +752,15 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     }
     if (kind == 'lead') {
       controllers['source']!.text = 'manual';
+    }
+    if (kind == 'quote') {
+      controllers['currency']!.text = 'SAR';
+      controllers['discount_amount']!.text = '0';
+      controllers['tax_amount']!.text = '0';
+      controllers['fee_amount']!.text = '0';
+    }
+    if (kind == 'booking') {
+      controllers['payment_condition']!.text = 'deposit_required';
     }
     if (kind == 'task' || kind == 'support') {
       controllers['priority']!.text = 'normal';
@@ -840,6 +881,8 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ..['source_provenance'] = 'phase13_operator_console';
     final bookingId = payload.remove('booking_id')?.toString();
     final customerId = payload.remove('customer_id')?.toString();
+    final leadId = payload.remove('lead_id')?.toString();
+    final quoteId = payload.remove('quote_id')?.toString();
     if (kind == 'customer') {
       final rawTags = payload['tags']?.toString();
       payload['tags'] = rawTags == null
@@ -856,6 +899,16 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     }
     if (kind == 'lead') {
       await repo.saveLead(tenant, customerId!, payload: payload);
+      return;
+    }
+    if (kind == 'quote') {
+      await repo.saveQuote(tenant, leadId!, payload: payload);
+      return;
+    }
+    if (kind == 'booking') {
+      payload['idempotency_key'] =
+          'ui-booking-${DateTime.now().microsecondsSinceEpoch}';
+      await repo.saveBooking(tenant, quoteId!, payload: payload);
       return;
     }
     if (kind == 'traveler') {
