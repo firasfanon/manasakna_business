@@ -78,7 +78,7 @@ void main() {
 
   test('Phase12 business app routes synthetic mode to productized surface', () {
     final source = File('lib/app.dart').readAsStringSync();
-    expect(source, contains('CommercialOperationsSyntheticPage'));
+    expect(source, contains('BusinessProductShell'));
     expect(source, isNot(contains('CommercialMvpBrowserPreviewPage')));
   });
 
