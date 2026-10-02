@@ -614,7 +614,28 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     return value.toString();
   }
 
-  String _fieldLabel(String key) => key.replaceAll('_', ' ');
+  String _fieldLabel(String key) => switch (key) {
+    'active_leads' => 'فرص نشطة',
+    'open_quotes' => 'عروض مفتوحة',
+    'active_bookings' => 'حجوزات نشطة',
+    'upcoming_departures' => 'مغادرات قادمة',
+    'missing_passports' => 'جوازات ناقصة',
+    'open_tasks' => 'مهام مفتوحة',
+    'open_support' => 'حالات دعم مفتوحة',
+    'customer_receivables' => 'ذمم العملاء',
+    'supplier_payables' => 'مستحقات الموردين',
+    'travelers' => 'المسافرون',
+    'documents_ready' => 'الوثائق جاهزة',
+    'visas_ready' => 'التأشيرات جاهزة',
+    'accommodation_ready' => 'الإقامة جاهزة',
+    'air_ready' => 'الطيران جاهز',
+    'transport_ready' => 'النقل جاهز',
+    'total_amount' => 'إجمالي الحجز',
+    'paid_amount' => 'المدفوع',
+    'outstanding_amount' => 'المتبقي',
+    'financially_ready' => 'الجاهزية المالية',
+    _ => key.replaceAll('_', ' '),
+  };
 
   String _createLabel(String kind) => switch (kind) {
     'customer' => 'عميل جديد',
@@ -1088,18 +1109,43 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                   widget.tenantId!,
                   row['id'].toString(),
                 ),
-                builder: (context, s) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.fact_check_outlined),
-                  title: const Text('جاهزية الحجز'),
-                  subtitle: Text(
-                    s.hasError
-                        ? 'تعذر حساب الجاهزية'
-                        : s.hasData
-                        ? _display(s.data)
-                        : 'جارٍ الحساب…',
-                  ),
-                ),
+                builder: (context, s) {
+                  if (s.hasError) {
+                    return const ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.error_outline),
+                      title: Text('جاهزية الحجز'),
+                      subtitle: Text(
+                        'تعذر حساب الجاهزية ضمن الصلاحية الحالية.',
+                      ),
+                    );
+                  }
+                  if (!s.hasData) {
+                    return const ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircularProgressIndicator(),
+                      title: Text('جارٍ حساب جاهزية الحجز…'),
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.fact_check_outlined),
+                        title: Text('جاهزية الحجز والمالية'),
+                      ),
+                      ...s.data!.entries.map(
+                        (e) => ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(_fieldLabel(e.key)),
+                          trailing: Text(_display(e.value)),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ],
