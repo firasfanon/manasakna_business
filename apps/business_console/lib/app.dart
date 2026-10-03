@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/business_environment.dart';
 import 'core/auth/login_page.dart';
-import 'features/product_experience/presentation/business_product_shell.dart';
+import 'core/design/manasakna_design_system.dart';
+import 'features/product_experience/presentation/public_home_page.dart';
+import 'features/product_experience/data/business_product_repository.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/tenancy/presentation/tenant_session.dart';
 
@@ -16,17 +18,17 @@ class ManasaknaBusinessApp extends ConsumerWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: BusinessEnvironment.productNameAr,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B6B56)),
-        useMaterial3: true,
-        fontFamily: 'NotoSansArabic',
-      ),
+      theme: ManasaknaDesign.lightTheme(),
       builder: (context, child) => Directionality(
         textDirection: TextDirection.rtl,
         child: child ?? const SizedBox.shrink(),
       ),
       home: BusinessEnvironment.syntheticPreview
-          ? const BusinessProductShell()
+          ? ManasaknaPublicHomePage(
+              tenantId: 'synthetic-tenant',
+              tenantName: 'شركة العمرة التجريبية',
+              repository: InMemoryBusinessProductRepository(),
+            )
           : BusinessEnvironment.isConfigured
           ? const _AuthGate()
           : const _ConfigurationRequiredPage(),

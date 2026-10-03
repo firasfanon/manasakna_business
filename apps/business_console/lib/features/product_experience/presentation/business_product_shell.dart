@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/business_product_repository.dart';
+import 'business_admin_page.dart';
+import 'business_360_pages.dart';
 
 enum BusinessWorkspace {
   dashboard,
@@ -129,6 +131,20 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 8),
               child: Chip(label: Text('بيئة اختبار — بيانات غير حقيقية')),
+            ),
+          if (_live)
+            IconButton(
+              tooltip: 'إدارة مساحة العمل',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => BusinessAdminPage(
+                    repository: widget.repository!,
+                    tenantId: widget.tenantId!,
+                    tenantName: widget.tenantName,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.settings_outlined),
             ),
           IconButton(
             tooltip: 'البحث السريع',
@@ -366,26 +382,51 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       'المسافرون',
       createKind: 'traveler',
     ),
-    BusinessWorkspace.programs => liveResource(
-      'packages',
+    BusinessWorkspace.programs => liveResourceGroup(
       'البرامج والمغادرات',
+      const [
+        ('packages', 'البرامج', 'package'),
+        ('departures', 'المغادرات', 'departure'),
+      ],
     ),
-    BusinessWorkspace.documents => liveResource(
-      'documents',
+    BusinessWorkspace.documents => liveResourceGroup(
       'الوثائق والتأشيرات',
+      const [
+        ('documents', 'وثائق المسافرين', 'document'),
+        ('visas', 'ملفات التأشيرات', 'visa'),
+      ],
     ),
-    BusinessWorkspace.accommodation => liveResource(
-      'accommodation',
+    BusinessWorkspace.accommodation => liveResourceGroup(
       'الإقامة والغرف',
+      const [
+        ('properties', 'الفنادق / مرافق الإقامة', 'property'),
+        ('accommodation', 'توزيع الغرف', 'accommodation'),
+      ],
     ),
-    BusinessWorkspace.transport => liveResource('transport', 'الطيران والنقل'),
+    BusinessWorkspace.transport => liveResourceGroup(
+      'الطيران والنقل',
+      const [
+        ('flights', 'مقاطع الطيران', 'flight'),
+        ('transport', 'النقل الأرضي', 'transport'),
+      ],
+    ),
     BusinessWorkspace.finance => liveResource(
       'finance',
       'المالية التشغيلية',
       createKind: 'finance',
     ),
-    BusinessWorkspace.suppliers => liveResource('suppliers', 'الموردون'),
-    BusinessWorkspace.groups => liveResource('groups', 'المجموعات والمشرفون'),
+    BusinessWorkspace.suppliers => liveResource(
+      'suppliers',
+      'الموردون',
+      createKind: 'supplier',
+    ),
+    BusinessWorkspace.groups => liveResourceGroup(
+      'المجموعات والمشرفون',
+      const [
+        ('groups', 'المجموعات', 'group'),
+        ('supervisors', 'المشرفون', 'supervisor'),
+      ],
+    ),
     BusinessWorkspace.tasks => liveResource(
       'tasks',
       'المهام التشغيلية',
@@ -445,6 +486,8 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                     )
                     .toList(),
               ),
+              const SizedBox(height: 20),
+              _dashboardCommandCenter(data),
               if (data.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(24),
@@ -454,6 +497,228 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
           );
         },
       );
+
+  Widget _dashboardCommandCenter(Map<String, dynamic> data) {
+    final missing = (data['missing_passports'] as num?)?.toInt() ?? 0;
+    final openTasks = (data['open_tasks'] as num?)?.toInt() ?? 0;
+    final receivables = (data['customer_receivables'] as num?) ?? 0;
+    final upcoming = (data['upcoming_departures'] as num?)?.toInt() ?? 0;
+    void go(BusinessWorkspace workspace) => setState(() => selected = workspace);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'مركز الإجراءات',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _actionCard(
+              Icons.badge_outlined,
+              'وثائق تحتاج متابعة',
+              missing == 0 ? 'لا توجد نواقص مسجلة' : '$missing مسافر/وثيقة تحتاج إجراء',
+              missing == 0 ? Colors.green : Colors.orange,
+              () => go(BusinessWorkspace.documents),
+            ),
+            _actionCard(
+              Icons.task_alt_outlined,
+              'المهام المفتوحة',
+              '$openTasks مهمة تحتاج متابعة',
+              openTasks == 0 ? Colors.green : Colors.orange,
+              () => go(BusinessWorkspace.tasks),
+            ),
+            _actionCard(
+              Icons.payments_outlined,
+              'التحصيلات',
+              '${receivables.toStringAsFixed(0)} ر.س ذمم قائمة',
+              receivables <= 0 ? Colors.green : Colors.orange,
+              () => go(BusinessWorkspace.finance),
+            ),
+            _actionCard(
+              Icons.flight_takeoff_outlined,
+              'المغادرات القادمة',
+              '$upcoming مغادرة تحت المتابعة',
+              Colors.blue,
+              () => go(BusinessWorkspace.programs),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Text(
+          'إجراءات سريعة',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            FilledButton.tonalIcon(
+              onPressed: () => go(BusinessWorkspace.crm),
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Text('عميل جديد'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: () => go(BusinessWorkspace.leads),
+              icon: const Icon(Icons.person_search_outlined),
+              label: const Text('متابعة فرصة'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: () => go(BusinessWorkspace.quotes),
+              icon: const Icon(Icons.request_quote_outlined),
+              label: const Text('إنشاء عرض'),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: () => go(BusinessWorkspace.bookings),
+              icon: const Icon(Icons.confirmation_number_outlined),
+              label: const Text('فتح الحجوزات'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _actionCard(
+    IconData icon,
+    String title,
+    String detail,
+    Color accent,
+    VoidCallback onTap,
+  ) =>
+      SizedBox(
+        width: 260,
+        child: Card(
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, color: accent),
+                  const SizedBox(height: 12),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  Text(detail),
+                  const SizedBox(height: 10),
+                  const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('فتح'),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_back, size: 16),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+  Widget liveResourceGroup(
+    String title,
+    List<(String, String, String)> panes,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header(
+          title,
+          'مساحات تشغيل مترابطة، لكل مورد سجل ونموذج وحالة مستقلة.',
+        ),
+        TextField(
+          onChanged: (v) => setState(() => query = v),
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            labelText: 'بحث في هذه المساحة',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...panes.map((pane) {
+          final resource = pane.$1;
+          final paneTitle = pane.$2;
+          final createKind = pane.$3;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _load(resource),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: LinearProgressIndicator(),
+                    ),
+                  );
+                }
+                if (snapshot.hasError) return liveError(snapshot.error);
+                final rows = snapshot.data ?? const <Map<String, dynamic>>[];
+                final filtered = rows.where((row) {
+                  if (query.trim().isEmpty) return true;
+                  final q = query.toLowerCase();
+                  return row.values.any(
+                    (v) => _display(v).toLowerCase().contains(q),
+                  );
+                }).toList();
+                return Card(
+                  child: ExpansionTile(
+                    initiallyExpanded: true,
+                    title: Text(
+                      paneTitle,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Text('${filtered.length} سجل'),
+                    trailing: FilledButton.tonalIcon(
+                      onPressed: () => liveCreateDialog(createKind, resource),
+                      icon: const Icon(Icons.add),
+                      label: const Text('إضافة'),
+                    ),
+                    children: [
+                      if (filtered.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Text('لا توجد سجلات في هذه المساحة.'),
+                          ),
+                        )
+                      else
+                        ...filtered.map(
+                          (row) => ListTile(
+                            leading: const Icon(Icons.chevron_left),
+                            title: Text(_primary(row)),
+                            subtitle: Text(
+                              _secondary(row),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: row['status'] == null
+                                ? null
+                                : Chip(label: Text(_display(row['status']))),
+                            onTap: () => liveDetails(resource, row),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        }),
+      ],
+    );
+  }
 
   Widget liveResource(
     String resource,
@@ -657,6 +922,60 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     _ => 'إضافة',
   };
 
+  String? _relationResource(String field) => switch (field) {
+    'customer_id' => 'customers',
+    'lead_id' => 'leads',
+    'quote_id' => 'quotes',
+    'booking_id' => 'bookings',
+    'departure_id' => 'departures',
+    'package_id' => 'packages',
+    'traveler_id' => 'travelers',
+    'supplier_id' => 'suppliers',
+    'property_id' => 'properties',
+    'group_id' => 'groups',
+    'supervisor_id' => 'supervisors',
+    _ => null,
+  };
+
+  Widget _formEditor(
+    (String, String, bool) field,
+    TextEditingController controller,
+    Map<String, List<Map<String, dynamic>>> relationRows,
+    bool busy,
+  ) {
+    final resource = _relationResource(field.$1);
+    if (resource != null) {
+      final options = relationRows[field.$1] ?? const <Map<String, dynamic>>[];
+      return DropdownButtonFormField<String>(
+        initialValue: controller.text.isEmpty ? null : controller.text,
+        isExpanded: true,
+        items: options
+            .map(
+              (row) => DropdownMenuItem<String>(
+                value: row['id']?.toString(),
+                child: Text(_primary(row), overflow: TextOverflow.ellipsis),
+              ),
+            )
+            .toList(),
+        onChanged: busy ? null : (value) => controller.text = value ?? '',
+        decoration: InputDecoration(
+          labelText: field.$2,
+          helperText: field.$3 ? 'مطلوب' : null,
+          border: const OutlineInputBorder(),
+        ),
+      );
+    }
+    return TextField(
+      controller: controller,
+      enabled: !busy,
+      decoration: InputDecoration(
+        labelText: field.$2,
+        helperText: field.$3 ? 'مطلوب' : null,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
   List<(String, String, bool)> _formFields(String kind) => switch (kind) {
     'customer' => const [
       ('full_name', 'الاسم الكامل', true),
@@ -674,7 +993,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ('communication_consent', 'موافقة التواصل true/false', false),
     ],
     'lead' => const [
-      ('customer_id', 'معرّف العميل', true),
+      ('customer_id', 'العميل', true),
       ('source', 'المصدر', false),
       ('notes', 'ملاحظات', false),
       ('expected_travelers', 'عدد المسافرين المتوقع', false),
@@ -684,7 +1003,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ('next_follow_up_at', 'المتابعة القادمة ISO-8601', false),
     ],
     'quote' => const [
-      ('lead_id', 'معرّف الفرصة', true),
+      ('lead_id', 'الفرصة', true),
       ('quote_code', 'رقم العرض', false),
       ('currency', 'العملة', true),
       ('subtotal_amount', 'المجموع قبل الخصم والضريبة', true),
@@ -694,19 +1013,19 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ('valid_until', 'صالح حتى YYYY-MM-DD', false),
       ('payment_terms', 'شروط الدفع', false),
       ('cancellation_terms', 'شروط الإلغاء', false),
-      ('departure_id', 'معرّف المغادرة', false),
+      ('departure_id', 'المغادرة', false),
     ],
     'booking' => const [
-      ('quote_id', 'معرّف العرض المقبول', true),
+      ('quote_id', 'عرض السعر المقبول', true),
       ('booking_code', 'رقم الحجز', false),
-      ('departure_id', 'معرّف المغادرة', false),
+      ('departure_id', 'المغادرة', false),
       ('total_amount', 'إجمالي الحجز', false),
       ('currency', 'العملة', false),
       ('payment_condition', 'شرط الدفع', false),
       ('external_reference', 'مرجع خارجي', false),
     ],
     'traveler' => const [
-      ('booking_id', 'معرّف الحجز', true),
+      ('booking_id', 'الحجز', true),
       ('full_name', 'اسم المسافر', true),
       ('passport_reference', 'مرجع الجواز', true),
       ('nationality', 'الجنسية', false),
@@ -715,20 +1034,20 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ('phone', 'الهاتف', false),
     ],
     'task' => const [
-      ('booking_id', 'معرّف الحجز', true),
+      ('booking_id', 'الحجز', true),
       ('title', 'عنوان المهمة', true),
       ('task_type', 'نوع المهمة', false),
       ('priority', 'الأولوية', false),
       ('due_at', 'موعد الاستحقاق ISO-8601', false),
     ],
     'support' => const [
-      ('booking_id', 'معرّف الحجز', true),
+      ('booking_id', 'الحجز', true),
       ('category', 'التصنيف', true),
       ('summary', 'ملخص الحالة', true),
       ('priority', 'الأولوية', false),
     ],
     'finance' => const [
-      ('booking_id', 'معرّف الحجز', true),
+      ('booking_id', 'الحجز', true),
       ('entry_type', 'نوع الحركة', true),
       ('amount', 'المبلغ', true),
       ('currency', 'العملة', true),
@@ -737,12 +1056,138 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ('receipt_number', 'رقم السند', false),
       ('notes', 'ملاحظات', false),
     ],
+    'package' => const [
+      ('name', 'اسم البرنامج', true),
+      ('duration_days', 'المدة بالأيام', true),
+      ('description', 'وصف البرنامج', false),
+      ('base_price', 'السعر الأساسي', false),
+      ('currency', 'العملة', false),
+      ('status', 'الحالة', false),
+    ],
+    'departure' => const [
+      ('package_id', 'البرنامج', true),
+      ('start_date', 'تاريخ المغادرة YYYY-MM-DD', true),
+      ('end_date', 'تاريخ العودة YYYY-MM-DD', true),
+      ('capacity', 'السعة', true),
+      ('status', 'الحالة', false),
+    ],
+    'document' => const [
+      ('traveler_id', 'المسافر', true),
+      ('document_type', 'نوع الوثيقة', true),
+      ('document_reference', 'مرجع الوثيقة', true),
+      ('document_number', 'رقم الوثيقة', false),
+      ('issued_on', 'تاريخ الإصدار YYYY-MM-DD', false),
+      ('expires_on', 'تاريخ الانتهاء YYYY-MM-DD', false),
+      ('issuing_country', 'بلد الإصدار', false),
+      ('verification_status', 'حالة المراجعة', false),
+      ('rejection_reason', 'سبب الرفض', false),
+    ],
+    'visa' => const [
+      ('traveler_id', 'المسافر', true),
+      ('status', 'حالة التأشيرة', true),
+      ('visa_type', 'نوع التأشيرة', false),
+      ('application_reference', 'مرجع الطلب', false),
+      ('authority_source', 'مصدر الحالة', false),
+      ('external_reference', 'المرجع الخارجي', false),
+      ('expires_on', 'تاريخ الانتهاء YYYY-MM-DD', false),
+      ('rejection_reason', 'سبب الرفض', false),
+    ],
+    'property' => const [
+      ('supplier_id', 'مورد الفندق', false),
+      ('name', 'اسم الفندق / المنشأة', true),
+      ('city', 'المدينة', true),
+      ('address', 'العنوان', false),
+      ('star_rating', 'التصنيف النجمي', false),
+      ('distance_to_haram_m', 'المسافة إلى الحرم بالمتر', false),
+      ('contact_phone', 'هاتف المنشأة', false),
+      ('status', 'الحالة', false),
+    ],
+    'accommodation' => const [
+      ('booking_id', 'الحجز', true),
+      ('property_id', 'الفندق / المنشأة', true),
+      ('traveler_id', 'المسافر', false),
+      ('room_label', 'رقم / رمز الغرفة', true),
+      ('check_in', 'تاريخ الدخول YYYY-MM-DD', true),
+      ('check_out', 'تاريخ الخروج YYYY-MM-DD', true),
+      ('room_type', 'نوع الغرفة', false),
+      ('occupancy', 'الإشغال', false),
+      ('status', 'الحالة', false),
+      ('notes', 'ملاحظات', false),
+    ],
+    'flight' => const [
+      ('booking_id', 'الحجز', true),
+      ('flight_number', 'رقم الرحلة', true),
+      ('origin', 'مطار المغادرة', true),
+      ('destination', 'مطار الوصول', true),
+      ('departure_at', 'موعد المغادرة ISO-8601', true),
+      ('arrival_at', 'موعد الوصول ISO-8601', true),
+      ('provider_name', 'شركة الطيران', false),
+      ('segment_type', 'نوع المقطع', false),
+      ('airline_code', 'رمز الناقل', false),
+      ('booking_reference', 'PNR / مرجع الحجز', false),
+      ('ticket_status', 'حالة التذكرة', false),
+      ('cabin_class', 'درجة السفر', false),
+      ('baggage_allowance', 'الأمتعة', false),
+      ('status', 'حالة الرحلة', false),
+    ],
+    'transport' => const [
+      ('booking_id', 'الحجز', true),
+      ('supplier_id', 'المورد', false),
+      ('mode', 'وسيلة النقل', true),
+      ('operator_name', 'اسم المشغل', false),
+      ('pickup', 'نقطة الالتقاط', true),
+      ('dropoff', 'نقطة الوصول', true),
+      ('scheduled_at', 'الموعد ISO-8601', true),
+      ('vehicle_reference', 'مرجع المركبة', false),
+      ('driver_name', 'اسم السائق', false),
+      ('driver_phone', 'هاتف السائق', false),
+      ('capacity', 'السعة', false),
+      ('status', 'الحالة', false),
+    ],
+    'supplier' => const [
+      ('name', 'اسم المورد', true),
+      ('supplier_type', 'نوع المورد', true),
+      ('contact_name', 'جهة الاتصال', false),
+      ('phone', 'الهاتف', false),
+      ('email', 'البريد الإلكتروني', false),
+      ('country', 'الدولة', false),
+      ('city', 'المدينة', false),
+      ('payment_terms', 'شروط الدفع', false),
+      ('notes', 'ملاحظات', false),
+      ('status', 'الحالة', false),
+    ],
+    'group' => const [
+      ('departure_id', 'المغادرة', true),
+      ('code', 'رمز المجموعة', true),
+      ('name', 'اسم المجموعة', true),
+      ('capacity', 'السعة', false),
+      ('status', 'الحالة', false),
+    ],
+    'supervisor' => const [
+      ('group_id', 'المجموعة', true),
+      ('display_name', 'اسم المشرف', true),
+      ('phone', 'الهاتف', false),
+      ('email', 'البريد الإلكتروني', false),
+      ('role_title', 'المسمى', false),
+      ('status', 'الحالة', false),
+    ],
     _ => const [],
   };
 
   Future<void> liveCreateDialog(String kind, String resource) async {
     final fields = _formFields(kind);
     final controllers = {for (final f in fields) f.$1: TextEditingController()};
+    final relationRows = <String, List<Map<String, dynamic>>>{};
+    for (final field in fields) {
+      final relationResource = _relationResource(field.$1);
+      if (relationResource != null) {
+        relationRows[field.$1] = await widget.repository!.list(
+          widget.tenantId!,
+          relationResource,
+          limit: 100,
+        );
+      }
+    }
     if (kind == 'finance') controllers['currency']!.text = 'SAR';
     if (kind == 'customer') {
       controllers['customer_type']!.text = 'individual';
@@ -765,9 +1210,44 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     if (kind == 'task' || kind == 'support') {
       controllers['priority']!.text = 'normal';
     }
+    if (kind == 'package') {
+      controllers['duration_days']!.text = '8';
+      controllers['base_price']!.text = '0';
+      controllers['currency']!.text = 'SAR';
+      controllers['status']!.text = 'draft';
+    }
+    if (kind == 'departure') {
+      controllers['capacity']!.text = '1';
+      controllers['status']!.text = 'planned';
+    }
+    if (kind == 'document') {
+      controllers['verification_status']!.text = 'pending';
+    }
+    if (kind == 'visa') {
+      controllers['status']!.text = 'not_started';
+      controllers['visa_type']!.text = 'umrah';
+    }
+    if (kind == 'property') controllers['status']!.text = 'active';
+    if (kind == 'accommodation') {
+      controllers['occupancy']!.text = '1';
+      controllers['status']!.text = 'reserved';
+    }
+    if (kind == 'flight') {
+      controllers['segment_type']!.text = 'outbound';
+      controllers['ticket_status']!.text = 'planned';
+      controllers['status']!.text = 'scheduled';
+    }
+    if (kind == 'transport') {
+      controllers['mode']!.text = 'bus';
+      controllers['status']!.text = 'planned';
+    }
+    if (kind == 'supplier') controllers['status']!.text = 'active';
+    if (kind == 'group') controllers['status']!.text = 'forming';
+    if (kind == 'supervisor') controllers['status']!.text = 'assigned';
     String? error;
     var busy = false;
     var saved = false;
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -789,14 +1269,11 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                   ...fields.map(
                     (f) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: TextField(
-                        controller: controllers[f.$1],
-                        enabled: !busy,
-                        decoration: InputDecoration(
-                          labelText: f.$2,
-                          helperText: f.$3 ? 'مطلوب' : null,
-                          border: const OutlineInputBorder(),
-                        ),
+                      child: _formEditor(
+                        f,
+                        controllers[f.$1]!,
+                        relationRows,
+                        busy,
                       ),
                     ),
                   ),
@@ -839,7 +1316,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                         error = null;
                       });
                       try {
-                        await _saveLive(kind, values);
+                        await _saveLive(kind, values, resource);
                         saved = true;
                         if (dialogContext.mounted) Navigator.pop(dialogContext);
                       } catch (e) {
@@ -872,7 +1349,11 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     }
   }
 
-  Future<void> _saveLive(String kind, Map<String, String> values) async {
+  Future<void> _saveLive(
+    String kind,
+    Map<String, String> values,
+    String resource,
+  ) async {
     final repo = widget.repository!;
     final tenant = widget.tenantId!;
     final payload = <String, dynamic>{...values}
@@ -929,7 +1410,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       await repo.saveFinance(tenant, bookingId!, payload);
       return;
     }
-    throw StateError('UNSUPPORTED_CREATE_KIND');
+    await repo.saveResource(tenant, resource, payload: payload);
   }
 
   String? _statusResource(String resource) => switch (resource) {
@@ -1091,6 +1572,63 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     }
   }
 
+  Future<void> _open360(
+    String resource,
+    Map<String, dynamic> row,
+  ) async {
+    final entity = switch (resource) {
+      'customers' => 'customer',
+      'bookings' => 'booking',
+      'departures' => 'departure',
+      _ => null,
+    };
+    if (entity == null) return;
+    final envelope = await widget.repository!.entity360(
+      widget.tenantId!,
+      entity,
+      row['id'].toString(),
+    );
+    if (!mounted) return;
+    final rawRecord = envelope['record'];
+    final record = rawRecord is Map
+        ? rawRecord.map((k, v) => MapEntry(k.toString(), v))
+        : Map<String, dynamic>.from(row);
+    final sections = <String, List<Map<String, dynamic>>>{};
+    final rawSections = envelope['sections'];
+    if (rawSections is Map) {
+      for (final entry in rawSections.entries) {
+        final value = entry.value;
+        if (value is List) {
+          sections[entry.key.toString()] = value
+              .whereType<Map>()
+              .map((x) => x.map((k, v) => MapEntry(k.toString(), v)))
+              .toList(growable: false);
+        }
+      }
+    }
+    final rawReadiness = envelope['readiness'];
+    final readiness = rawReadiness is Map
+        ? rawReadiness.map((k, v) => MapEntry(k.toString(), v))
+        : null;
+    final page = switch (entity) {
+      'customer' => Customer360Page(record: record, sections: sections),
+      'booking' => Booking360Page(
+          record: record,
+          sections: sections,
+          readiness: readiness,
+        ),
+      'departure' => Departure360Page(record: record, sections: sections),
+      _ => Business360Page(
+          title: 'ملف 360°',
+          record: record,
+          sections: sections,
+        ),
+    };
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => page),
+    );
+  }
+
   void liveDetails(
     String resource,
     Map<String, dynamic> row,
@@ -1112,6 +1650,20 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
+            if (const {'customers', 'bookings', 'departures'}.contains(resource)) ...[
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.tonalIcon(
+                  onPressed: () async {
+                    Navigator.pop(c);
+                    await _open360(resource, row);
+                  },
+                  icon: const Icon(Icons.dashboard_customize_outlined),
+                  label: const Text('فتح ملف 360°'),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             if (_statusTargets(
               resource,
               row['status']?.toString() ?? '',

@@ -76,10 +76,15 @@ void main() {
     expect(source, isNot(contains('Phase 7 Preview')));
   });
 
-  test('Phase12 business app routes synthetic mode to productized surface', () {
-    final source = File('lib/app.dart').readAsStringSync();
-    expect(source, contains('BusinessProductShell'));
-    expect(source, isNot(contains('CommercialMvpBrowserPreviewPage')));
+  test('synthetic mode routes through the full public product experience', () {
+    final app = File('lib/app.dart').readAsStringSync();
+    final publicHome = File(
+      'lib/features/product_experience/presentation/public_home_page.dart',
+    ).readAsStringSync();
+    expect(app, contains('ManasaknaPublicHomePage'));
+    expect(publicHome, contains('BusinessProductShell'));
+    expect(publicHome, contains('TravelerPortalPage'));
+    expect(app, isNot(contains('CommercialMvpBrowserPreviewPage')));
   });
 
   test('Business web shell owns the real mobile viewport', () {

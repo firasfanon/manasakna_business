@@ -91,10 +91,12 @@ void main() {
 
   test('Arabic font is bundled locally for degraded web operation', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    final appSource = File('lib/app.dart').readAsStringSync();
+    final designSource = File(
+      'lib/core/design/manasakna_design_system.dart',
+    ).readAsStringSync();
     expect(pubspec, contains('family: NotoSansArabic'));
     expect(pubspec, contains('assets/fonts/NotoSansArabic-Variable.ttf'));
-    expect(appSource, contains("fontFamily: 'NotoSansArabic'"));
+    expect(designSource, contains("fontFamily: 'NotoSansArabic'"));
     expect(
       File('assets/fonts/NotoSansArabic-Variable.ttf').existsSync(),
       isTrue,
