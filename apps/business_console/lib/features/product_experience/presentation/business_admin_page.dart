@@ -28,59 +28,57 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('إدارة مساحة العمل'),
-          actions: [
-            IconButton(
-              tooltip: 'تحديث',
-              onPressed: _refresh,
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
+    appBar: AppBar(
+      title: const Text('إدارة مساحة العمل'),
+      actions: [
+        IconButton(
+          tooltip: 'تحديث',
+          onPressed: _refresh,
+          icon: const Icon(Icons.refresh),
         ),
-        body: ListView(
-          key: ValueKey(revision),
-          padding: const EdgeInsets.all(20),
-          children: [
-            _hero(context),
-            const SizedBox(height: 18),
-            _settingsSection(context),
-            const SizedBox(height: 18),
-            _branchesSection(context),
-            const SizedBox(height: 18),
-            _staffSection(context),
-          ],
-        ),
-      );
+      ],
+    ),
+    body: ListView(
+      key: ValueKey(revision),
+      padding: const EdgeInsets.all(20),
+      children: [
+        _hero(context),
+        const SizedBox(height: 18),
+        _settingsSection(context),
+        const SizedBox(height: 18),
+        _branchesSection(context),
+        const SizedBox(height: 18),
+        _staffSection(context),
+      ],
+    ),
+  );
 
   Widget _hero(BuildContext context) => Container(
-        padding: const EdgeInsets.all(22),
-        decoration: ManasaknaDesign.panel(context),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 18,
-          runSpacing: 12,
+    padding: const EdgeInsets.all(22),
+    decoration: ManasaknaDesign.panel(context),
+    child: Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 18,
+      runSpacing: 12,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.tenantName,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'الهوية والفروع والأدوار ضمن حدود الصلاحيات الحالية.',
-                ),
-              ],
+            Text(
+              widget.tenantName,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
-            const Chip(label: Text('Non-Production')),
+            const SizedBox(height: 6),
+            const Text('الهوية والفروع والأدوار ضمن حدود الصلاحيات الحالية.'),
           ],
         ),
-      );
+        const Chip(label: Text('Non-Production')),
+      ],
+    ),
+  );
 
   Widget _settingsSection(BuildContext context) =>
       FutureBuilder<List<Map<String, dynamic>>>(
@@ -114,95 +112,101 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
         },
       );
 
-  Widget _branchesSection(BuildContext context) =>
-      FutureBuilder<List<Map<String, dynamic>>>(
-        future: _load('branches'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const LinearProgressIndicator();
-          }
-          if (snapshot.hasError) return _error(snapshot.error);
-          final rows = snapshot.data ?? const [];
-          return FutureBuilder<List<Map<String, dynamic>>>(
-            future: _load('organizations'),
-            builder: (context, orgSnapshot) {
-              final organizations = orgSnapshot.data ?? const [];
-              return _sectionCard(
-                context,
-                icon: Icons.account_tree_outlined,
-                title: 'الفروع',
-                subtitle: 'إدارة الفروع التابعة للمؤسسة الحالية.',
-                action: FilledButton.tonalIcon(
-                  onPressed: organizations.isEmpty
-                      ? null
-                      : () => _editBranch(null, organizations),
-                  icon: const Icon(Icons.add_business_outlined),
-                  label: const Text('فرع جديد'),
-                ),
-                children: rows.isEmpty
-                    ? const [ListTile(title: Text('لا توجد فروع.'))]
-                    : rows
-                        .map(
-                          (row) => ListTile(
-                            leading: const Icon(Icons.store_mall_directory_outlined),
-                            title: Text(row['name']?.toString() ?? 'فرع'),
-                            subtitle: Text(
-                              '${row['code'] ?? ''} • ${row['timezone'] ?? ''}',
-                            ),
-                            trailing: IconButton(
-                              tooltip: 'تعديل',
-                              onPressed: () => _editBranch(row, organizations),
-                              icon: const Icon(Icons.edit_outlined),
-                            ),
-                          ),
-                        )
-                        .toList(),
-              );
-            },
-          );
-        },
-      );
-
-  Widget _staffSection(BuildContext context) =>
-      FutureBuilder<List<Map<String, dynamic>>>(
-        future: _load('staff'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const LinearProgressIndicator();
-          }
-          if (snapshot.hasError) return _error(snapshot.error);
-          final rows = snapshot.data ?? const [];
+  Widget _branchesSection(
+    BuildContext context,
+  ) => FutureBuilder<List<Map<String, dynamic>>>(
+    future: _load('branches'),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) {
+        return const LinearProgressIndicator();
+      }
+      if (snapshot.hasError) return _error(snapshot.error);
+      final rows = snapshot.data ?? const [];
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: _load('organizations'),
+        builder: (context, orgSnapshot) {
+          final organizations = orgSnapshot.data ?? const [];
           return _sectionCard(
             context,
-            icon: Icons.manage_accounts_outlined,
-            title: 'المستخدمون والأدوار',
-            subtitle:
-                'تعديل دور وحالة الأعضاء الموجودين. دعوة مستخدم جديد تتطلب قناة Auth Admin رسمية.',
+            icon: Icons.account_tree_outlined,
+            title: 'الفروع',
+            subtitle: 'إدارة الفروع التابعة للمؤسسة الحالية.',
+            action: FilledButton.tonalIcon(
+              onPressed: organizations.isEmpty
+                  ? null
+                  : () => _editBranch(null, organizations),
+              icon: const Icon(Icons.add_business_outlined),
+              label: const Text('فرع جديد'),
+            ),
             children: rows.isEmpty
-                ? const [ListTile(title: Text('لا توجد عضويات ظاهرة.'))]
+                ? const [ListTile(title: Text('لا توجد فروع.'))]
                 : rows
-                    .map(
-                      (row) => ListTile(
-                        leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-                        title: Text(
-                          (row['email']?.toString().isNotEmpty ?? false)
-                              ? row['email'].toString()
-                              : row['user_id'].toString(),
+                      .map(
+                        (row) => ListTile(
+                          leading: const Icon(
+                            Icons.store_mall_directory_outlined,
+                          ),
+                          title: Text(row['name']?.toString() ?? 'فرع'),
+                          subtitle: Text(
+                            '${row['code'] ?? ''} • ${row['timezone'] ?? ''}',
+                          ),
+                          trailing: IconButton(
+                            tooltip: 'تعديل',
+                            onPressed: () => _editBranch(row, organizations),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
                         ),
-                        subtitle: Text(
-                          'الدور: ${row['role']} • الحالة: ${row['status']}',
-                        ),
-                        trailing: IconButton(
-                          tooltip: 'إدارة العضوية',
-                          onPressed: () => _editStaff(row),
-                          icon: const Icon(Icons.admin_panel_settings_outlined),
-                        ),
-                      ),
-                    )
-                    .toList(),
+                      )
+                      .toList(),
           );
         },
       );
+    },
+  );
+
+  Widget _staffSection(
+    BuildContext context,
+  ) => FutureBuilder<List<Map<String, dynamic>>>(
+    future: _load('staff'),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) {
+        return const LinearProgressIndicator();
+      }
+      if (snapshot.hasError) return _error(snapshot.error);
+      final rows = snapshot.data ?? const [];
+      return _sectionCard(
+        context,
+        icon: Icons.manage_accounts_outlined,
+        title: 'المستخدمون والأدوار',
+        subtitle:
+            'تعديل دور وحالة الأعضاء الموجودين. دعوة مستخدم جديد تتطلب قناة Auth Admin رسمية.',
+        children: rows.isEmpty
+            ? const [ListTile(title: Text('لا توجد عضويات ظاهرة.'))]
+            : rows
+                  .map(
+                    (row) => ListTile(
+                      leading: const CircleAvatar(
+                        child: Icon(Icons.person_outline),
+                      ),
+                      title: Text(
+                        (row['email']?.toString().isNotEmpty ?? false)
+                            ? row['email'].toString()
+                            : row['user_id'].toString(),
+                      ),
+                      subtitle: Text(
+                        'الدور: ${row['role']} • الحالة: ${row['status']}',
+                      ),
+                      trailing: IconButton(
+                        tooltip: 'إدارة العضوية',
+                        onPressed: () => _editStaff(row),
+                        icon: const Icon(Icons.admin_panel_settings_outlined),
+                      ),
+                    ),
+                  )
+                  .toList(),
+      );
+    },
+  );
 
   Widget _sectionCard(
     BuildContext context, {
@@ -211,54 +215,53 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
     required String subtitle,
     Widget? action,
     required List<Widget> children,
-  }) =>
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+  }) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(icon, color: ManasaknaDesign.brand),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                        Text(subtitle),
-                      ],
+              Icon(icon, color: ManasaknaDesign.brand),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  ?action,
-                ],
+                    Text(subtitle),
+                  ],
+                ),
               ),
-              const Divider(height: 28),
-              ...children,
+              ?action,
             ],
           ),
-        ),
-      );
+          const Divider(height: 28),
+          ...children,
+        ],
+      ),
+    ),
+  );
 
   Widget _kv(String label, Object? value) => ListTile(
-        dense: true,
-        title: Text(label),
-        trailing: Text(value?.toString().trim().isNotEmpty == true
-            ? value.toString()
-            : '—'),
-      );
+    dense: true,
+    title: Text(label),
+    trailing: Text(
+      value?.toString().trim().isNotEmpty == true ? value.toString() : '—',
+    ),
+  );
 
   Widget _error(Object? error) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text('تعذر تحميل إعدادات الإدارة: $error'),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Text('تعذر تحميل إعدادات الإدارة: $error'),
+    ),
+  );
 
   Future<void> _editSettings(Map<String, dynamic> row) async {
     final ar = TextEditingController(text: row['brand_name_ar']?.toString());
@@ -275,17 +278,33 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                TextField(controller: ar, decoration: const InputDecoration(labelText: 'الاسم العربي')),
+                TextField(
+                  controller: ar,
+                  decoration: const InputDecoration(labelText: 'الاسم العربي'),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: en, decoration: const InputDecoration(labelText: 'الاسم الإنجليزي')),
+                TextField(
+                  controller: en,
+                  decoration: const InputDecoration(
+                    labelText: 'الاسم الإنجليزي',
+                  ),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: email, decoration: const InputDecoration(labelText: 'بريد الدعم')),
+                TextField(
+                  controller: email,
+                  decoration: const InputDecoration(labelText: 'بريد الدعم'),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: phone, decoration: const InputDecoration(labelText: 'هاتف الدعم')),
+                TextField(
+                  controller: phone,
+                  decoration: const InputDecoration(labelText: 'هاتف الدعم'),
+                ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   initialValue: locale,
-                  decoration: const InputDecoration(labelText: 'اللغة الأساسية'),
+                  decoration: const InputDecoration(
+                    labelText: 'اللغة الأساسية',
+                  ),
                   items: const [
                     DropdownMenuItem(value: 'ar', child: Text('العربية')),
                     DropdownMenuItem(value: 'en', child: Text('English')),
@@ -336,7 +355,8 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
       text: row?['timezone']?.toString() ?? 'Asia/Hebron',
     );
     var organizationId =
-        row?['organization_id']?.toString() ?? organizations.first['id'].toString();
+        row?['organization_id']?.toString() ??
+        organizations.first['id'].toString();
     var active = row?['is_active'] != false;
     final saved = await showDialog<bool>(
       context: context,
@@ -359,14 +379,26 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
                         ),
                       )
                       .toList(),
-                  onChanged: (value) => organizationId = value ?? organizationId,
+                  onChanged: (value) =>
+                      organizationId = value ?? organizationId,
                 ),
                 const SizedBox(height: 10),
-                TextField(controller: code, decoration: const InputDecoration(labelText: 'رمز الفرع')),
+                TextField(
+                  controller: code,
+                  decoration: const InputDecoration(labelText: 'رمز الفرع'),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: name, decoration: const InputDecoration(labelText: 'اسم الفرع')),
+                TextField(
+                  controller: name,
+                  decoration: const InputDecoration(labelText: 'اسم الفرع'),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: timezone, decoration: const InputDecoration(labelText: 'المنطقة الزمنية')),
+                TextField(
+                  controller: timezone,
+                  decoration: const InputDecoration(
+                    labelText: 'المنطقة الزمنية',
+                  ),
+                ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: active,
@@ -429,7 +461,8 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
                     DropdownMenuItem(value: 'operator', child: Text('مشغل')),
                     DropdownMenuItem(value: 'viewer', child: Text('مشاهد')),
                   ],
-                  onChanged: (value) => setDialogState(() => role = value ?? role),
+                  onChanged: (value) =>
+                      setDialogState(() => role = value ?? role),
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(

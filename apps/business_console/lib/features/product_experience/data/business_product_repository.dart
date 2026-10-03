@@ -694,11 +694,8 @@ class InMemoryBusinessProductRepository implements BusinessProductRepository {
     String id,
     String status, {
     String? reason,
-  }) async => _upsert(
-    resource,
-    id: id,
-    payload: {'status': status, 'reason': ?reason},
-  );
+  }) async =>
+      _upsert(resource, id: id, payload: {'status': status, 'reason': ?reason});
   @override
   Future<Map<String, dynamic>> advanceBooking(
     String tenantId,
@@ -709,10 +706,7 @@ class InMemoryBusinessProductRepository implements BusinessProductRepository {
   }) async => _upsert(
     'bookings',
     id: bookingId,
-    payload: {
-      'workflow_stage': stage,
-      'transition_reason': ?reason,
-    },
+    payload: {'workflow_stage': stage, 'transition_reason': ?reason},
   );
   @override
   Future<Map<String, dynamic>> bookingReadiness(
@@ -830,10 +824,9 @@ class InMemoryBusinessProductRepository implements BusinessProductRepository {
       if (id == null) {
         throw StateError('STAFF_INVITATION_REQUIRES_AUTH_ADMIN_CHANNEL');
       }
-      final current = _rows('staff').firstWhere(
-        (row) => row['id'] == id,
-        orElse: () => <String, dynamic>{},
-      );
+      final current = _rows(
+        'staff',
+      ).firstWhere((row) => row['id'] == id, orElse: () => <String, dynamic>{});
       if (current.isEmpty) throw StateError('STAFF_NOT_IN_TENANT');
       return _upsert('staff', id: id, payload: {...current, ...payload});
     }
@@ -848,19 +841,16 @@ class InMemoryBusinessProductRepository implements BusinessProductRepository {
   ) async {
     if (tenantId != _tenantId) throw StateError('TENANT_SCOPE_DENIED');
     Map<String, dynamic> record(String resource) => Map<String, dynamic>.from(
-          _rows(resource).firstWhere(
-            (row) => row['id'] == id,
-            orElse: () => <String, dynamic>{},
-          ),
-        );
+      _rows(
+        resource,
+      ).firstWhere((row) => row['id'] == id, orElse: () => <String, dynamic>{}),
+    );
     List<Map<String, dynamic>> related(
       String resource,
       bool Function(Map<String, dynamic>) test,
-    ) =>
-        _rows(resource)
-            .where(test)
-            .map(Map<String, dynamic>.from)
-            .toList(growable: false);
+    ) => _rows(
+      resource,
+    ).where(test).map(Map<String, dynamic>.from).toList(growable: false);
 
     if (entity == 'customer') {
       final current = record('customers');
@@ -879,10 +869,7 @@ class InMemoryBusinessProductRepository implements BusinessProductRepository {
     if (entity == 'booking') {
       final current = record('bookings');
       if (current.isEmpty) throw StateError('BOOKING_NOT_IN_TENANT');
-      final travelerRows = related(
-        'travelers',
-        (r) => r['booking_id'] == id,
-      );
+      final travelerRows = related('travelers', (r) => r['booking_id'] == id);
       final travelerIds = travelerRows.map((r) => r['id']).toSet();
       return {
         'entity': entity,

@@ -82,7 +82,9 @@ class _PublicLeadCapturePageState extends State<PublicLeadCapturePage> {
                 ? Semantics(
                     container: true,
                     label: 'Lead submitted',
-                    child: const Text('Thanks. Our team will contact you soon.'),
+                    child: const Text(
+                      'Thanks. Our team will contact you soon.',
+                    ),
                   )
                 : Column(
                     mainAxisSize: MainAxisSize.min,
