@@ -48,6 +48,7 @@ class BusinessProductShell extends StatefulWidget {
 class _BusinessProductShellState extends State<BusinessProductShell> {
   BusinessWorkspace selected = BusinessWorkspace.dashboard;
   String query = '';
+  String? _activeCreateKind;
   final Map<String, Future<List<Map<String, dynamic>>>> _liveRequests = {};
   Future<Map<String, dynamic>>? _dashboardRequest;
 
@@ -1016,6 +1017,107 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     _ => null,
   };
 
+  List<String>? _enumOptions(String field) => switch (field) {
+    'customer_type' => const ['individual', 'family', 'organization'],
+    'preferred_locale' => const ['ar', 'en'],
+    'communication_consent' => const ['false', 'true'],
+    'payment_condition' => const ['none', 'deposit_required', 'full_payment_required'],
+    'priority' => const ['low', 'normal', 'high', 'urgent'],
+    'entry_type' => const ['charge', 'payment', 'refund'],
+    'document_type' => const ['passport', 'photo', 'vaccination', 'other'],
+    'verification_status' => const ['pending', 'verified', 'rejected', 'expired'],
+    'visa_type' => const ['umrah'],
+    'supplier_type' => const ['hotel', 'flight', 'transport', 'visa', 'other'],
+    'segment_type' => const ['outbound', 'return', 'internal'],
+    'ticket_status' => const ['planned', 'reserved', 'ticketed', 'cancelled'],
+    'mode' => const ['bus', 'van', 'car', 'train', 'other'],
+    'status' => null,
+    _ => null,
+  };
+
+  List<String>? _statusOptions(String kind) => switch (kind) {
+    'package' => const ['draft', 'active', 'inactive'],
+    'departure' => const ['planned', 'open', 'closed', 'departed', 'returned', 'cancelled'],
+    'visa' => const ['not_started', 'prepared', 'submitted', 'under_review', 'approved', 'rejected', 'issued', 'expired'],
+    'property' => const ['active', 'inactive'],
+    'accommodation' => const ['planned', 'reserved', 'confirmed', 'checked_in', 'checked_out', 'cancelled'],
+    'flight' => const ['scheduled', 'confirmed', 'delayed', 'departed', 'arrived', 'cancelled'],
+    'transport' => const ['planned', 'confirmed', 'in_progress', 'completed', 'cancelled'],
+    'supplier' => const ['active', 'inactive'],
+    'group' => const ['forming', 'ready', 'departed', 'returned', 'closed', 'cancelled'],
+    'supervisor' => const ['assigned', 'inactive'],
+    _ => null,
+  };
+
+  String _enumLabel(String value) => switch (value) {
+    'individual' => 'فرد',
+    'family' => 'عائلة',
+    'organization' => 'مؤسسة',
+    'ar' => 'العربية',
+    'en' => 'الإنجليزية',
+    'true' => 'نعم',
+    'false' => 'لا',
+    'none' => 'بدون شرط',
+    'deposit_required' => 'دفعة مقدمة مطلوبة',
+    'full_payment_required' => 'سداد كامل مطلوب',
+    'low' => 'منخفضة',
+    'normal' => 'عادية',
+    'high' => 'عالية',
+    'urgent' => 'عاجلة',
+    'charge' => 'استحقاق',
+    'payment' => 'دفعة',
+    'refund' => 'استرداد',
+    'passport' => 'جواز سفر',
+    'photo' => 'صورة شخصية',
+    'vaccination' => 'تطعيم',
+    'other' => 'أخرى',
+    'pending' => 'قيد الانتظار',
+    'verified' => 'متحقق',
+    'rejected' => 'مرفوض',
+    'expired' => 'منتهي',
+    'umrah' => 'عمرة',
+    'hotel' => 'فندق',
+    'flight' => 'طيران',
+    'transport' => 'نقل',
+    'visa' => 'تأشيرة',
+    'outbound' => 'ذهاب',
+    'return' => 'عودة',
+    'internal' => 'داخلي',
+    'planned' => 'مخطط',
+    'reserved' => 'محجوز',
+    'ticketed' => 'مصدر التذكرة',
+    'cancelled' => 'ملغي',
+    'bus' => 'حافلة',
+    'van' => 'فان',
+    'car' => 'سيارة',
+    'train' => 'قطار',
+    'draft' => 'مسودة',
+    'active' => 'نشط',
+    'inactive' => 'غير نشط',
+    'open' => 'مفتوح',
+    'closed' => 'مغلق',
+    'departed' => 'غادر',
+    'returned' => 'عاد',
+    'not_started' => 'لم يبدأ',
+    'prepared' => 'مجهز',
+    'submitted' => 'مقدم',
+    'under_review' => 'قيد المراجعة',
+    'approved' => 'موافق عليه',
+    'issued' => 'صادرة',
+    'confirmed' => 'مؤكد',
+    'checked_in' => 'تم تسجيل الدخول',
+    'checked_out' => 'تم تسجيل الخروج',
+    'scheduled' => 'مجدول',
+    'delayed' => 'متأخر',
+    'arrived' => 'وصل',
+    'in_progress' => 'قيد التنفيذ',
+    'completed' => 'مكتمل',
+    'forming' => 'قيد التشكيل',
+    'ready' => 'جاهز',
+    'assigned' => 'مكلف',
+    _ => value,
+  };
+
   Widget _formEditor(
     (String, String, bool) field,
     TextEditingController controller,
@@ -1047,6 +1149,27 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
             )
             .toList(),
         onSelected: busy ? null : (value) => controller.text = value ?? '',
+      );
+    }
+    final enumOptions = field.$1 == 'status'
+        ? _statusOptions(_activeCreateKind ?? '')
+        : _enumOptions(field.$1);
+    if (enumOptions != null) {
+      return DropdownButtonFormField<String>(
+        initialValue: controller.text.isEmpty ? null : controller.text,
+        isExpanded: true,
+        items: enumOptions
+            .map((value) => DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(_enumLabel(value)),
+                ))
+            .toList(),
+        onChanged: busy ? null : (value) => controller.text = value ?? '',
+        decoration: InputDecoration(
+          labelText: field.$2,
+          helperText: field.$3 ? 'مطلوب' : null,
+          border: const OutlineInputBorder(),
+        ),
       );
     }
     return TextField(
@@ -1259,6 +1382,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
   };
 
   Future<void> liveCreateDialog(String kind, String resource) async {
+    _activeCreateKind = kind;
     final fields = _formFields(kind);
     final controllers = {for (final f in fields) f.$1: TextEditingController()};
     final relationRows = <String, List<Map<String, dynamic>>>{};
