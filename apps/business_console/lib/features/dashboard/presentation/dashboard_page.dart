@@ -29,6 +29,7 @@ class BusinessDashboardPage extends ConsumerWidget {
       tenantName: selected.tenantName,
       repository: SupabaseBusinessProductRepository(Supabase.instance.client),
       nonProduction: true,
+      roleName: selected.role.name,
       onSignOut: () => Supabase.instance.client.auth.signOut(),
     );
   }

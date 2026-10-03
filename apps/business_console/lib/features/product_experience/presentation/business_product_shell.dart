@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../data/business_product_repository.dart';
 import 'business_admin_page.dart';
 import 'business_360_pages.dart';
+import 'global_business_search_page.dart';
+import 'business_insights_page.dart';
 
 enum BusinessWorkspace {
   dashboard,
@@ -30,12 +32,14 @@ class BusinessProductShell extends StatefulWidget {
     this.tenantName = 'شركة العمرة التجريبية',
     this.repository,
     this.nonProduction = true,
+    this.roleName = 'operator',
     this.onSignOut,
   });
   final String? tenantId;
   final String tenantName;
   final BusinessProductRepository? repository;
   final bool nonProduction;
+  final String roleName;
   final VoidCallback? onSignOut;
   @override
   State<BusinessProductShell> createState() => _BusinessProductShellState();
@@ -64,6 +68,81 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     _dashboardRequest = null;
     if (mounted) setState(() {});
   }
+
+  BusinessWorkspace _workspaceForResource(String resource) =>
+      switch (resource) {
+        'customers' => BusinessWorkspace.crm,
+        'leads' => BusinessWorkspace.leads,
+        'quotes' => BusinessWorkspace.quotes,
+        'bookings' => BusinessWorkspace.bookings,
+        'travelers' => BusinessWorkspace.travelers,
+        'packages' || 'departures' => BusinessWorkspace.programs,
+        'documents' || 'visas' => BusinessWorkspace.documents,
+        'properties' || 'accommodation' => BusinessWorkspace.accommodation,
+        'flights' || 'transport' => BusinessWorkspace.transport,
+        'finance' => BusinessWorkspace.finance,
+        'suppliers' => BusinessWorkspace.suppliers,
+        'groups' || 'supervisors' => BusinessWorkspace.groups,
+        'tasks' => BusinessWorkspace.tasks,
+        'support' => BusinessWorkspace.support,
+        _ => BusinessWorkspace.dashboard,
+      };
+
+  Future<void> _openSearch() async {
+    if (!_live) {
+      await showSearch<void>(
+        context: context,
+        delegate: SearchAll([...leads, ...quotes, ...bookings, ...travelers]),
+      );
+      return;
+    }
+    final result = await Navigator.of(context).push<BusinessSearchSelection>(
+      MaterialPageRoute<BusinessSearchSelection>(
+        builder: (_) => GlobalBusinessSearchPage(
+          repository: widget.repository!,
+          tenantId: widget.tenantId!,
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    setState(() => selected = _workspaceForResource(result.resource));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) liveDetails(result.resource, result.row);
+    });
+  }
+
+  Future<void> _openInsights({int tab = 0}) async {
+    if (!_live) return;
+    final resource = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => BusinessInsightsPage(
+          repository: widget.repository!,
+          tenantId: widget.tenantId!,
+          roleName: widget.roleName,
+          initialTab: tab,
+        ),
+      ),
+    );
+    if (!mounted || resource == null) return;
+    setState(() => selected = _workspaceForResource(resource));
+  }
+
+  String get _roleDashboardTitle => switch (widget.roleName) {
+    'owner' => 'لوحة قيادة المالك',
+    'admin' => 'لوحة الإدارة',
+    'manager' => 'لوحة قيادة المدير',
+    'viewer' => 'ملخص المكتب',
+    _ => 'لوحة العمليات',
+  };
+
+  String get _roleDashboardSubtitle => switch (widget.roleName) {
+    'owner' ||
+    'admin' => 'المبيعات والعمليات والمالية والجاهزية في مركز قيادة واحد.',
+    'manager' =>
+      'الأولويات التشغيلية والمغادرات والمهام ومؤشرات الأداء الحالية.',
+    'viewer' => 'عرض مقروء للمؤشرات الحالية ضمن صلاحيات العضوية.',
+    _ => 'مهام اليوم، الحجوزات، الوثائق والجاهزية ضمن نطاق عملك.',
+  };
 
   final leads = <R>[
     R('LD-2401', 'محمد أحمد الخطيب', '0599001122', 'جديد', 'اليوم 10:30'),
@@ -146,17 +225,21 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
               ),
               icon: const Icon(Icons.settings_outlined),
             ),
-          IconButton(
-            tooltip: 'البحث السريع',
-            onPressed: () => showSearch<void>(
-              context: context,
-              delegate: SearchAll([
-                ...leads,
-                ...quotes,
-                ...bookings,
-                ...travelers,
-              ]),
+          if (_live)
+            IconButton(
+              tooltip: 'مركز الإجراءات',
+              onPressed: () => _openInsights(),
+              icon: const Icon(Icons.notifications_active_outlined),
             ),
+          if (_live)
+            IconButton(
+              tooltip: 'Manasakna Intelligence',
+              onPressed: () => _openInsights(tab: 1),
+              icon: const Icon(Icons.auto_awesome_outlined),
+            ),
+          IconButton(
+            tooltip: 'البحث الشامل',
+            onPressed: _openSearch,
             icon: const Icon(Icons.search),
           ),
           if (widget.onSignOut != null)
@@ -396,20 +479,15 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
         ('visas', 'ملفات التأشيرات', 'visa'),
       ],
     ),
-    BusinessWorkspace.accommodation => liveResourceGroup(
-      'الإقامة والغرف',
-      const [
+    BusinessWorkspace.accommodation =>
+      liveResourceGroup('الإقامة والغرف', const [
         ('properties', 'الفنادق / مرافق الإقامة', 'property'),
         ('accommodation', 'توزيع الغرف', 'accommodation'),
-      ],
-    ),
-    BusinessWorkspace.transport => liveResourceGroup(
-      'الطيران والنقل',
-      const [
-        ('flights', 'مقاطع الطيران', 'flight'),
-        ('transport', 'النقل الأرضي', 'transport'),
-      ],
-    ),
+      ]),
+    BusinessWorkspace.transport => liveResourceGroup('الطيران والنقل', const [
+      ('flights', 'مقاطع الطيران', 'flight'),
+      ('transport', 'النقل الأرضي', 'transport'),
+    ]),
     BusinessWorkspace.finance => liveResource(
       'finance',
       'المالية التشغيلية',
@@ -420,13 +498,10 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       'الموردون',
       createKind: 'supplier',
     ),
-    BusinessWorkspace.groups => liveResourceGroup(
-      'المجموعات والمشرفون',
-      const [
-        ('groups', 'المجموعات', 'group'),
-        ('supervisors', 'المشرفون', 'supervisor'),
-      ],
-    ),
+    BusinessWorkspace.groups => liveResourceGroup('المجموعات والمشرفون', const [
+      ('groups', 'المجموعات', 'group'),
+      ('supervisors', 'المشرفون', 'supervisor'),
+    ]),
     BusinessWorkspace.tasks => liveResource(
       'tasks',
       'المهام التشغيلية',
@@ -458,8 +533,10 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               header(
-                reports ? 'التقارير والمؤشرات' : 'صباح الخير — عمليات اليوم',
-                'بيانات مشتقة مباشرة من مساحة المكتب الحالية.',
+                reports ? 'التقارير والمؤشرات' : _roleDashboardTitle,
+                reports
+                    ? 'بيانات مشتقة مباشرة من مساحة المكتب الحالية.'
+                    : _roleDashboardSubtitle,
                 action: IconButton(
                   onPressed: _invalidate,
                   tooltip: 'تحديث',
@@ -503,16 +580,17 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     final openTasks = (data['open_tasks'] as num?)?.toInt() ?? 0;
     final receivables = (data['customer_receivables'] as num?) ?? 0;
     final upcoming = (data['upcoming_departures'] as num?)?.toInt() ?? 0;
-    void go(BusinessWorkspace workspace) => setState(() => selected = workspace);
+    void go(BusinessWorkspace workspace) =>
+        setState(() => selected = workspace);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'مركز الإجراءات',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -522,7 +600,9 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
             _actionCard(
               Icons.badge_outlined,
               'وثائق تحتاج متابعة',
-              missing == 0 ? 'لا توجد نواقص مسجلة' : '$missing مسافر/وثيقة تحتاج إجراء',
+              missing == 0
+                  ? 'لا توجد نواقص مسجلة'
+                  : '$missing مسافر/وثيقة تحتاج إجراء',
               missing == 0 ? Colors.green : Colors.orange,
               () => go(BusinessWorkspace.documents),
             ),
@@ -550,39 +630,41 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
           ],
         ),
         const SizedBox(height: 18),
-        Text(
-          'إجراءات سريعة',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+        if (widget.roleName != 'viewer') ...[
+          Text(
+            'إجراءات سريعة',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => go(BusinessWorkspace.crm),
+                icon: const Icon(Icons.person_add_alt_1),
+                label: const Text('عميل جديد'),
               ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            FilledButton.tonalIcon(
-              onPressed: () => go(BusinessWorkspace.crm),
-              icon: const Icon(Icons.person_add_alt_1),
-              label: const Text('عميل جديد'),
-            ),
-            FilledButton.tonalIcon(
-              onPressed: () => go(BusinessWorkspace.leads),
-              icon: const Icon(Icons.person_search_outlined),
-              label: const Text('متابعة فرصة'),
-            ),
-            FilledButton.tonalIcon(
-              onPressed: () => go(BusinessWorkspace.quotes),
-              icon: const Icon(Icons.request_quote_outlined),
-              label: const Text('إنشاء عرض'),
-            ),
-            FilledButton.tonalIcon(
-              onPressed: () => go(BusinessWorkspace.bookings),
-              icon: const Icon(Icons.confirmation_number_outlined),
-              label: const Text('فتح الحجوزات'),
-            ),
-          ],
-        ),
+              FilledButton.tonalIcon(
+                onPressed: () => go(BusinessWorkspace.leads),
+                icon: const Icon(Icons.person_search_outlined),
+                label: const Text('متابعة فرصة'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => go(BusinessWorkspace.quotes),
+                icon: const Icon(Icons.request_quote_outlined),
+                label: const Text('إنشاء عرض'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => go(BusinessWorkspace.bookings),
+                icon: const Icon(Icons.confirmation_number_outlined),
+                label: const Text('فتح الحجوزات'),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -593,42 +675,38 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     String detail,
     Color accent,
     VoidCallback onTap,
-  ) =>
-      SizedBox(
-        width: 260,
-        child: Card(
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  ) => SizedBox(
+    width: 260,
+    child: Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: accent),
+              const SizedBox(height: 12),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Text(detail),
+              const SizedBox(height: 10),
+              const Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, color: accent),
-                  const SizedBox(height: 12),
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  Text(detail),
-                  const SizedBox(height: 10),
-                  const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('فتح'),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_back, size: 16),
-                    ],
-                  ),
+                  Text('فتح'),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_back, size: 16),
                 ],
               ),
-            ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 
-  Widget liveResourceGroup(
-    String title,
-    List<(String, String, String)> panes,
-  ) {
+  Widget liveResourceGroup(String title, List<(String, String, String)> panes) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1572,10 +1650,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     }
   }
 
-  Future<void> _open360(
-    String resource,
-    Map<String, dynamic> row,
-  ) async {
+  Future<void> _open360(String resource, Map<String, dynamic> row) async {
     final entity = switch (resource) {
       'customers' => 'customer',
       'bookings' => 'booking',
@@ -1613,20 +1688,20 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     final page = switch (entity) {
       'customer' => Customer360Page(record: record, sections: sections),
       'booking' => Booking360Page(
-          record: record,
-          sections: sections,
-          readiness: readiness,
-        ),
+        record: record,
+        sections: sections,
+        readiness: readiness,
+      ),
       'departure' => Departure360Page(record: record, sections: sections),
       _ => Business360Page(
-          title: 'ملف 360°',
-          record: record,
-          sections: sections,
-        ),
+        title: 'ملف 360°',
+        record: record,
+        sections: sections,
+      ),
     };
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => page),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
   void liveDetails(
@@ -1650,7 +1725,11 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
-            if (const {'customers', 'bookings', 'departures'}.contains(resource)) ...[
+            if (const {
+              'customers',
+              'bookings',
+              'departures',
+            }.contains(resource)) ...[
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton.tonalIcon(

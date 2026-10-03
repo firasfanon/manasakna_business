@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:manasakna_business_console/features/product_experience/data/business_product_repository.dart';
 import 'package:manasakna_business_console/features/product_experience/presentation/business_admin_page.dart';
+import 'package:manasakna_business_console/features/product_experience/presentation/business_insights_page.dart';
+import 'package:manasakna_business_console/features/product_experience/presentation/global_business_search_page.dart';
 import 'package:manasakna_business_console/features/product_experience/presentation/public_home_page.dart';
 import 'package:manasakna_business_console/features/product_experience/presentation/traveler_portal_page.dart';
 
@@ -13,32 +15,31 @@ void main() {
   });
 
   Widget app(Widget home) => MaterialApp(
-        home: Directionality(
-          textDirection: TextDirection.rtl,
-          child: home,
+    home: Directionality(textDirection: TextDirection.rtl, child: home),
+  );
+
+  testWidgets(
+    'public home exposes visitor, traveler and business entry points',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1440, 1100));
+      await tester.pumpWidget(
+        app(
+          ManasaknaPublicHomePage(
+            repository: repository,
+            tenantId: 'synthetic-tenant',
+          ),
         ),
       );
+      await tester.pumpAndSettle();
 
-  testWidgets('public home exposes visitor, traveler and business entry points',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1440, 1100));
-    await tester.pumpWidget(
-      app(
-        ManasaknaPublicHomePage(
-          repository: repository,
-          tenantId: 'synthetic-tenant',
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('رحلتك تبدأ بتنظيم أفضل'), findsOneWidget);
-    expect(find.text('ابدأ طلب رحلتك'), findsOneWidget);
-    expect(find.text('متابعة حجز قائم'), findsOneWidget);
-    expect(find.byTooltip('بوابة المسافر'), findsOneWidget);
-    expect(find.byTooltip('دخول لوحة الأعمال'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('رحلتك تبدأ بتنظيم أفضل'), findsOneWidget);
+      expect(find.text('ابدأ طلب رحلتك'), findsOneWidget);
+      expect(find.text('متابعة حجز قائم'), findsOneWidget);
+      expect(find.byTooltip('بوابة المسافر'), findsOneWidget);
+      expect(find.byTooltip('دخول لوحة الأعمال'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('public home is stable at 390px', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -57,8 +58,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('traveler portal renders journey and governed readiness',
-      (tester) async {
+  testWidgets('traveler portal renders journey and governed readiness', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     await tester.pumpWidget(
       app(
@@ -87,8 +89,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('admin surface exposes branding branches and staff',
-      (tester) async {
+  testWidgets('admin surface exposes branding branches and staff', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(1200, 900));
     await tester.pumpWidget(
       app(
@@ -105,6 +108,52 @@ void main() {
     expect(find.text('الهوية وإعدادات المكتب'), findsOneWidget);
     expect(find.text('الفروع'), findsOneWidget);
     expect(find.text('المستخدمون والأدوار'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('global search is repository-backed and tenant bounded', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    await tester.pumpWidget(
+      app(
+        GlobalBusinessSearchPage(
+          repository: repository,
+          tenantId: 'synthetic-tenant',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('البحث الشامل'), findsOneWidget);
+    expect(find.textContaining('عميل، حجز، مسافر'), findsOneWidget);
+    expect(find.text('العملاء'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('operations intelligence exposes role and governed assistant', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    await tester.pumpWidget(
+      app(
+        BusinessInsightsPage(
+          repository: repository,
+          tenantId: 'synthetic-tenant',
+          roleName: 'manager',
+          initialTab: 1,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('مركز القيادة والذكاء التشغيلي'), findsOneWidget);
+    expect(find.textContaining('الدور الحالي: مدير'), findsOneWidget);
+    expect(find.text('ذكاء تشغيلي محكوم'), findsOneWidget);
+    expect(
+      find.textContaining('لم يتم تفعيل مزود ذكاء اصطناعي خارجي'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }
