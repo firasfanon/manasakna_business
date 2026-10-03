@@ -252,6 +252,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       ),
       drawer: wide ? null : Drawer(child: SafeArea(child: nav())),
       body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (wide)
             SizedBox(
@@ -1019,28 +1020,33 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     (String, String, bool) field,
     TextEditingController controller,
     Map<String, List<Map<String, dynamic>>> relationRows,
+    Map<String, TextEditingController> relationDisplayControllers,
     bool busy,
   ) {
     final resource = _relationResource(field.$1);
     if (resource != null) {
       final options = relationRows[field.$1] ?? const <Map<String, dynamic>>[];
-      return DropdownButtonFormField<String>(
-        initialValue: controller.text.isEmpty ? null : controller.text,
-        isExpanded: true,
-        items: options
+      return DropdownMenu<String>(
+        controller: relationDisplayControllers[field.$1],
+        enabled: !busy,
+        enableFilter: true,
+        enableSearch: true,
+        requestFocusOnTap: true,
+        expandedInsets: EdgeInsets.zero,
+        label: Text(field.$2),
+        helperText: field.$3
+            ? 'مطلوب • ابحث بالاسم أو المرجع'
+            : 'ابحث بالاسم أو المرجع',
+        dropdownMenuEntries: options
+            .where((row) => row['id'] != null)
             .map(
-              (row) => DropdownMenuItem<String>(
-                value: row['id']?.toString(),
-                child: Text(_primary(row), overflow: TextOverflow.ellipsis),
+              (row) => DropdownMenuEntry<String>(
+                value: row['id'].toString(),
+                label: _primary(row),
               ),
             )
             .toList(),
-        onChanged: busy ? null : (value) => controller.text = value ?? '',
-        decoration: InputDecoration(
-          labelText: field.$2,
-          helperText: field.$3 ? 'مطلوب' : null,
-          border: const OutlineInputBorder(),
-        ),
+        onSelected: busy ? null : (value) => controller.text = value ?? '',
       );
     }
     return TextField(
@@ -1256,6 +1262,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     final fields = _formFields(kind);
     final controllers = {for (final f in fields) f.$1: TextEditingController()};
     final relationRows = <String, List<Map<String, dynamic>>>{};
+    final relationDisplayControllers = <String, TextEditingController>{};
     for (final field in fields) {
       final relationResource = _relationResource(field.$1);
       if (relationResource != null) {
@@ -1264,6 +1271,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
           relationResource,
           limit: 100,
         );
+        relationDisplayControllers[field.$1] = TextEditingController();
       }
     }
     if (kind == 'finance') controllers['currency']!.text = 'SAR';
@@ -1351,6 +1359,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                         f,
                         controllers[f.$1]!,
                         relationRows,
+                        relationDisplayControllers,
                         busy,
                       ),
                     ),
@@ -1915,7 +1924,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
   );
   Widget metric(String l, String v, IconData i) => SizedBox(
     width: MediaQuery.sizeOf(context).width < 520
-        ? MediaQuery.sizeOf(context).width - 48
+        ? (MediaQuery.sizeOf(context).width - 36) / 2
         : 205,
     child: Card(
       child: Padding(

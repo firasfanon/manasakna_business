@@ -6,6 +6,9 @@ import 'config/business_environment.dart';
 import 'core/auth/login_page.dart';
 import 'core/design/manasakna_design_system.dart';
 import 'features/product_experience/presentation/public_home_page.dart';
+import 'features/product_experience/presentation/business_product_shell.dart';
+import 'features/product_experience/presentation/traveler_portal_page.dart';
+import 'features/product_experience/presentation/business_admin_page.dart';
 import 'features/product_experience/data/business_product_repository.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/tenancy/presentation/tenant_session.dart';
@@ -24,11 +27,28 @@ class ManasaknaBusinessApp extends ConsumerWidget {
         child: child ?? const SizedBox.shrink(),
       ),
       home: BusinessEnvironment.syntheticPreview
-          ? ManasaknaPublicHomePage(
-              tenantId: 'synthetic-tenant',
-              tenantName: 'شركة العمرة التجريبية',
-              repository: InMemoryBusinessProductRepository(),
-            )
+          ? switch (BusinessEnvironment.syntheticSurface) {
+              'business' => BusinessProductShell(
+                tenantId: 'synthetic-tenant',
+                tenantName: 'شركة العمرة التجريبية',
+                repository: InMemoryBusinessProductRepository(),
+                roleName: 'manager',
+              ),
+              'traveler' => TravelerPortalPage(
+                repository: InMemoryBusinessProductRepository(),
+                tenantId: 'synthetic-tenant',
+              ),
+              'admin' => BusinessAdminPage(
+                repository: InMemoryBusinessProductRepository(),
+                tenantId: 'synthetic-tenant',
+                tenantName: 'شركة العمرة التجريبية',
+              ),
+              _ => ManasaknaPublicHomePage(
+                tenantId: 'synthetic-tenant',
+                tenantName: 'شركة العمرة التجريبية',
+                repository: InMemoryBusinessProductRepository(),
+              ),
+            }
           : BusinessEnvironment.isConfigured
           ? const _AuthGate()
           : const _ConfigurationRequiredPage(),

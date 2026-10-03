@@ -19,9 +19,14 @@ class BusinessEnvironment {
     defaultValue: false,
   );
 
+  static const syntheticSurface = String.fromEnvironment(
+    'BUSINESS_SYNTHETIC_SURFACE',
+    defaultValue: 'public',
+  );
+
   static bool get isConfigured =>
       supabaseUrl.trim().isNotEmpty && publishableKey.trim().isNotEmpty;
 
   static const phaseLabel = 'Phase 11 — Preproduction Readiness';
-  static const currentProgramLabel = 'Phase 12 — Productization & Admission';
+  static const currentProgramLabel = 'Full Productization & Experience V1';
 }
