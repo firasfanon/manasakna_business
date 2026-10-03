@@ -42,6 +42,7 @@ class ManasaknaBusinessApp extends ConsumerWidget {
                 repository: InMemoryBusinessProductRepository(),
                 tenantId: 'synthetic-tenant',
                 tenantName: 'شركة العمرة التجريبية',
+                roleName: 'manager',
               ),
               _ => ManasaknaPublicHomePage(
                 tenantId: 'synthetic-tenant',

@@ -9,10 +9,12 @@ class BusinessAdminPage extends StatefulWidget {
     required this.repository,
     required this.tenantId,
     required this.tenantName,
+    this.roleName = 'operator',
   });
   final BusinessProductRepository repository;
   final String tenantId;
   final String tenantName;
+  final String roleName;
 
   @override
   State<BusinessAdminPage> createState() => _BusinessAdminPageState();
@@ -20,6 +22,12 @@ class BusinessAdminPage extends StatefulWidget {
 
 class _BusinessAdminPageState extends State<BusinessAdminPage> {
   int revision = 0;
+
+  bool get _ownerOrAdmin =>
+      widget.roleName == 'owner' || widget.roleName == 'admin';
+  bool get _canManageSettings => _ownerOrAdmin;
+  bool get _canManageBranches => _ownerOrAdmin || widget.roleName == 'manager';
+  bool get _canManageStaff => _ownerOrAdmin;
 
   Future<List<Map<String, dynamic>>> _load(String resource) =>
       widget.repository.adminList(widget.tenantId, resource);
@@ -96,11 +104,13 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
             icon: Icons.palette_outlined,
             title: 'الهوية وإعدادات المكتب',
             subtitle: 'اسم العلامة ووسائل الدعم واللغة الأساسية.',
-            action: FilledButton.tonalIcon(
-              onPressed: () => _editSettings(row),
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('تعديل'),
-            ),
+            action: _canManageSettings
+                ? FilledButton.tonalIcon(
+                    onPressed: () => _editSettings(row),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('تعديل'),
+                  )
+                : null,
             children: [
               _kv('الاسم العربي', row['brand_name_ar']),
               _kv('الاسم الإنجليزي', row['brand_name_en']),
@@ -131,13 +141,15 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
             icon: Icons.account_tree_outlined,
             title: 'الفروع',
             subtitle: 'إدارة الفروع التابعة للمؤسسة الحالية.',
-            action: FilledButton.tonalIcon(
-              onPressed: organizations.isEmpty
-                  ? null
-                  : () => _editBranch(null, organizations),
-              icon: const Icon(Icons.add_business_outlined),
-              label: const Text('فرع جديد'),
-            ),
+            action: _canManageBranches
+                ? FilledButton.tonalIcon(
+                    onPressed: organizations.isEmpty
+                        ? null
+                        : () => _editBranch(null, organizations),
+                    icon: const Icon(Icons.add_business_outlined),
+                    label: const Text('فرع جديد'),
+                  )
+                : null,
             children: rows.isEmpty
                 ? const [ListTile(title: Text('لا توجد فروع.'))]
                 : rows
@@ -150,11 +162,14 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
                           subtitle: Text(
                             '${row['code'] ?? ''} • ${row['timezone'] ?? ''}',
                           ),
-                          trailing: IconButton(
-                            tooltip: 'تعديل',
-                            onPressed: () => _editBranch(row, organizations),
-                            icon: const Icon(Icons.edit_outlined),
-                          ),
+                          trailing: _canManageBranches
+                              ? IconButton(
+                                  tooltip: 'تعديل',
+                                  onPressed: () =>
+                                      _editBranch(row, organizations),
+                                  icon: const Icon(Icons.edit_outlined),
+                                )
+                              : null,
                         ),
                       )
                       .toList(),
@@ -196,11 +211,15 @@ class _BusinessAdminPageState extends State<BusinessAdminPage> {
                       subtitle: Text(
                         'الدور: ${row['role']} • الحالة: ${row['status']}',
                       ),
-                      trailing: IconButton(
-                        tooltip: 'إدارة العضوية',
-                        onPressed: () => _editStaff(row),
-                        icon: const Icon(Icons.admin_panel_settings_outlined),
-                      ),
+                      trailing: _canManageStaff
+                          ? IconButton(
+                              tooltip: 'إدارة العضوية',
+                              onPressed: () => _editStaff(row),
+                              icon: const Icon(
+                                Icons.admin_panel_settings_outlined,
+                              ),
+                            )
+                          : null,
                     ),
                   )
                   .toList(),

@@ -145,6 +145,30 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     _ => 'مهام اليوم، الحجوزات، الوثائق والجاهزية ضمن نطاق عملك.',
   };
 
+  bool get _isOwnerOrAdmin =>
+      widget.roleName == 'owner' || widget.roleName == 'admin';
+
+  bool _canCreateKind(String kind) => switch (kind) {
+    'customer' || 'lead' => widget.roleName != 'viewer',
+    'quote' ||
+    'package' ||
+    'departure' => _isOwnerOrAdmin || widget.roleName == 'manager',
+    'booking' ||
+    'traveler' ||
+    'document' ||
+    'visa' ||
+    'property' ||
+    'accommodation' ||
+    'flight' ||
+    'transport' ||
+    'group' ||
+    'supervisor' ||
+    'task' ||
+    'support' => widget.roleName != 'viewer',
+    'finance' || 'supplier' => _isOwnerOrAdmin,
+    _ => false,
+  };
+
   final leads = <R>[
     R('LD-2401', 'محمد أحمد الخطيب', '0599001122', 'جديد', 'اليوم 10:30'),
     R('LD-2402', 'سارة محمود', '0568112233', 'تواصل', 'أمس 16:10'),
@@ -221,6 +245,7 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                     repository: widget.repository!,
                     tenantId: widget.tenantId!,
                     tenantName: widget.tenantName,
+                    roleName: widget.roleName,
                   ),
                 ),
               ),
@@ -654,11 +679,12 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                 icon: const Icon(Icons.person_search_outlined),
                 label: const Text('متابعة فرصة'),
               ),
-              FilledButton.tonalIcon(
-                onPressed: () => go(BusinessWorkspace.quotes),
-                icon: const Icon(Icons.request_quote_outlined),
-                label: const Text('إنشاء عرض'),
-              ),
+              if (_canCreateKind('quote'))
+                FilledButton.tonalIcon(
+                  onPressed: () => go(BusinessWorkspace.quotes),
+                  icon: const Icon(Icons.request_quote_outlined),
+                  label: const Text('إنشاء عرض'),
+                ),
               FilledButton.tonalIcon(
                 onPressed: () => go(BusinessWorkspace.bookings),
                 icon: const Icon(Icons.confirmation_number_outlined),
@@ -759,11 +785,14 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     subtitle: Text('${filtered.length} سجل'),
-                    trailing: FilledButton.tonalIcon(
-                      onPressed: () => liveCreateDialog(createKind, resource),
-                      icon: const Icon(Icons.add),
-                      label: const Text('إضافة'),
-                    ),
+                    trailing: _canCreateKind(createKind)
+                        ? FilledButton.tonalIcon(
+                            onPressed: () =>
+                                liveCreateDialog(createKind, resource),
+                            icon: const Icon(Icons.add),
+                            label: const Text('إضافة'),
+                          )
+                        : null,
                     children: [
                       if (filtered.isEmpty)
                         const Padding(
@@ -837,14 +866,15 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
                   tooltip: 'تحديث',
                   icon: const Icon(Icons.refresh),
                 ),
-                if (secondaryCreateKind != null)
+                if (secondaryCreateKind != null &&
+                    _canCreateKind(secondaryCreateKind))
                   TextButton.icon(
                     onPressed: () =>
                         liveCreateDialog(secondaryCreateKind, resource),
                     icon: const Icon(Icons.person_add_alt_1),
                     label: Text(_createLabel(secondaryCreateKind)),
                   ),
-                if (createKind != null)
+                if (createKind != null && _canCreateKind(createKind))
                   FilledButton.icon(
                     onPressed: () => liveCreateDialog(createKind, resource),
                     icon: const Icon(Icons.add),
@@ -918,7 +948,9 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
   String _primary(Map<String, dynamic> row) {
     for (final key in const [
       'full_name',
+      'display_name',
       'name',
+      'title',
       'summary',
       'booking_code',
       'quote_code',
@@ -926,7 +958,9 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
       'traveler_code',
       'case_code',
       'reference',
-      'id',
+      'code',
+      'notes',
+      'source',
     ]) {
       final value = row[key];
       if (value != null && value.toString().trim().isNotEmpty) {
@@ -1021,11 +1055,20 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
     'customer_type' => const ['individual', 'family', 'organization'],
     'preferred_locale' => const ['ar', 'en'],
     'communication_consent' => const ['false', 'true'],
-    'payment_condition' => const ['none', 'deposit_required', 'full_payment_required'],
+    'payment_condition' => const [
+      'none',
+      'deposit_required',
+      'full_payment_required',
+    ],
     'priority' => const ['low', 'normal', 'high', 'urgent'],
     'entry_type' => const ['charge', 'payment', 'refund'],
     'document_type' => const ['passport', 'photo', 'vaccination', 'other'],
-    'verification_status' => const ['pending', 'verified', 'rejected', 'expired'],
+    'verification_status' => const [
+      'pending',
+      'verified',
+      'rejected',
+      'expired',
+    ],
     'visa_type' => const ['umrah'],
     'supplier_type' => const ['hotel', 'flight', 'transport', 'visa', 'other'],
     'segment_type' => const ['outbound', 'return', 'internal'],
@@ -1037,14 +1080,57 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
 
   List<String>? _statusOptions(String kind) => switch (kind) {
     'package' => const ['draft', 'active', 'inactive'],
-    'departure' => const ['planned', 'open', 'closed', 'departed', 'returned', 'cancelled'],
-    'visa' => const ['not_started', 'prepared', 'submitted', 'under_review', 'approved', 'rejected', 'issued', 'expired'],
+    'departure' => const [
+      'planned',
+      'open',
+      'closed',
+      'departed',
+      'returned',
+      'cancelled',
+    ],
+    'visa' => const [
+      'not_started',
+      'prepared',
+      'submitted',
+      'under_review',
+      'approved',
+      'rejected',
+      'issued',
+      'expired',
+    ],
     'property' => const ['active', 'inactive'],
-    'accommodation' => const ['planned', 'reserved', 'confirmed', 'checked_in', 'checked_out', 'cancelled'],
-    'flight' => const ['scheduled', 'confirmed', 'delayed', 'departed', 'arrived', 'cancelled'],
-    'transport' => const ['planned', 'confirmed', 'in_progress', 'completed', 'cancelled'],
+    'accommodation' => const [
+      'planned',
+      'reserved',
+      'confirmed',
+      'checked_in',
+      'checked_out',
+      'cancelled',
+    ],
+    'flight' => const [
+      'scheduled',
+      'confirmed',
+      'delayed',
+      'departed',
+      'arrived',
+      'cancelled',
+    ],
+    'transport' => const [
+      'planned',
+      'confirmed',
+      'in_progress',
+      'completed',
+      'cancelled',
+    ],
     'supplier' => const ['active', 'inactive'],
-    'group' => const ['forming', 'ready', 'departed', 'returned', 'closed', 'cancelled'],
+    'group' => const [
+      'forming',
+      'ready',
+      'departed',
+      'returned',
+      'closed',
+      'cancelled',
+    ],
     'supervisor' => const ['assigned', 'inactive'],
     _ => null,
   };
@@ -1159,10 +1245,12 @@ class _BusinessProductShellState extends State<BusinessProductShell> {
         initialValue: controller.text.isEmpty ? null : controller.text,
         isExpanded: true,
         items: enumOptions
-            .map((value) => DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(_enumLabel(value)),
-                ))
+            .map(
+              (value) => DropdownMenuItem<String>(
+                value: value,
+                child: Text(_enumLabel(value)),
+              ),
+            )
             .toList(),
         onChanged: busy ? null : (value) => controller.text = value ?? '',
         decoration: InputDecoration(
